@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>EmpView.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">EmpView.java</span></div><h1>EmpView.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.solution.ib.bean.EmpBean;
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class empView
+ */
+@WebServlet(&quot;/EmpView&quot;)
+public class EmpView extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public EmpView() {
+<span class="nc" id="L30">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L32">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L42">		Logger LOGGER = Logger.getLogger(EmpView.class.getName());</span>
+		try {
+<span class="nc" id="L44">		PrintWriter out = response.getWriter();</span>
+<span class="nc" id="L45">		ArrayList&lt;EmpBean&gt; det = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L46">		BankingDao dao = new BankingDao();</span>
+<span class="nc" id="L47">		det = dao.empView();</span>
+<span class="nc" id="L48">		String data=new String();</span>
+<span class="nc" id="L49">		Iterator&lt;EmpBean&gt; i = det.iterator();</span>
+<span class="nc" id="L50">		data=&quot;&lt;table&gt;&quot;;</span>
+<span class="nc" id="L51">		data = data+&quot;&lt;tr&gt;&quot;;</span>
+<span class="nc" id="L52">		data = data+&quot;&lt;th&gt;Emp ID&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L53">		data = data + &quot;&lt;th&gt;Employee Name&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L54">		data = data+&quot;&lt;th&gt;Date of Joining&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L55">		data = data+ &quot;&lt;th&gt;Branch&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L56">		data = data + &quot;&lt;th&gt;Email&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L57">		data = data + &quot;&lt;th&gt;Status&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L58">		data = data + &quot;&lt;th&gt;View Details&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L59">		data = data + &quot;&lt;th&gt;Edit&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L60">		data = data + &quot;&lt;th&gt;Delete&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L61">		data = data +&quot;&lt;/tr&gt;&quot;;</span>
+<span class="nc bnc" id="L62" title="All 2 branches missed.">		while (i.hasNext()) {</span>
+<span class="nc" id="L63">			EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L64">			bean=i.next();</span>
+<span class="nc" id="L65">			data = data + &quot;&lt;tr&gt;&quot;;</span>
+<span class="nc" id="L66">			data = data + &quot;&lt;td&gt;&quot;+bean.getEmpID()+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L67">			data = data + &quot;&lt;td&gt;&quot;+bean.getEmpfName()+&quot; &quot;+bean.getEmplName()+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L68">			data = data + &quot;&lt;td&gt;&quot;+bean.getDOJ()+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L69">			data = data + &quot;&lt;td&gt;&quot;+bean.getBranch()+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L70">			data = data + &quot;&lt;td&gt;&quot;+bean.getPemail()+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L71">			String status = new String();</span>
+<span class="nc bnc" id="L72" title="All 2 branches missed.">			if(bean.getStatus()==1) {</span>
+<span class="nc" id="L73">				status =&quot;Registration Pending&quot;;</span>
+			}
+<span class="nc bnc" id="L75" title="All 2 branches missed.">			if(bean.getStatus()==2) {</span>
+<span class="nc" id="L76">				status =&quot;Review Pending&quot;;</span>
+			}
+<span class="nc bnc" id="L78" title="All 2 branches missed.">			if(bean.getStatus()==3) {</span>
+<span class="nc" id="L79">				status =&quot;Verification Done&quot;;</span>
+			}
+<span class="nc bnc" id="L81" title="All 2 branches missed.">			if(bean.getStatus()==4) {</span>
+<span class="nc" id="L82">				status =&quot;Resigned job&quot;;</span>
+			}
+<span class="nc" id="L84">			data = data + &quot;&lt;td&gt;&quot;+status+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L85">			data = data + &quot;&lt;td&gt;&lt;div class=\&quot;view-button\&quot; onclick=\&quot;viewcompletedetails('&quot;+bean.getEmpID()+&quot;')\&quot;&gt;View&lt;/div&gt;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L86">			data = data + &quot;&lt;td&gt;&lt;div class=\&quot;view-button\&quot; onclick=\&quot;edit('&quot;+bean.getEmpID()+&quot;','&quot;+bean.getEmpfName()+&quot;','&quot;+bean.getEmplName()+&quot;','&quot;+bean.getDOJ()+&quot;','&quot;+bean.getDOB()+&quot;','&quot;+bean.getBranch()+&quot;','&quot;+bean.getPemail()+&quot;')\&quot;&gt;edit&lt;/div&gt;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L87">			data = data + &quot;&lt;td&gt;&lt;div class=\&quot;view-button\&quot; onclick=\&quot;tempdelete('&quot;+bean.getEmpID()+&quot;')\&quot;&gt;delete&lt;/div&gt;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L88">			data = data + &quot;&lt;/tr&gt;&quot;;</span>
+		}
+<span class="nc" id="L90">		data= data + &quot;&lt;/table&gt;&quot;;</span>
+<span class="nc" id="L91">		out.print(data);</span>
+<span class="nc" id="L92">		} catch (UnknownHostException e) {</span>
+<span class="nc" id="L93">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+<span class="nc" id="L94">		}catch (Exception e) {</span>
+<span class="nc" id="L95">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+		}
+<span class="nc" id="L97">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

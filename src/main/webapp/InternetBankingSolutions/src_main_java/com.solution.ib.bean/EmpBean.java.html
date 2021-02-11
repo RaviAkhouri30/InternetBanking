@@ -1,0 +1,262 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>EmpBean.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.bean</a> &gt; <span class="el_source">EmpBean.java</span></div><h1>EmpBean.java</h1><pre class="source lang-java linenums">package com.solution.ib.bean;
+
+import java.io.Serializable;
+import java.util.Date;
+
+public class EmpBean implements Serializable{
+	/**
+	 * 
+	 */
+	private static final long serialVersionUID = -5494378722627978671L;
+	private String empfName;
+	private String empmName;
+	private String emplName;
+	private String password;
+	private String empID;
+	private String priAddr;
+	private String secAddr;
+	private String father;
+	private String mother;
+	private String spouse;
+	private String aadhar;
+	private String panCard;
+	private String passport;
+	private Date dOJ;
+	private Date dOL;
+	private String secMob;
+	private String priMob;
+	private String gender;
+	private String bloodGroup;
+	private String termsAndCondition;
+	private String branch;
+	private String OfficeAddr;
+	private String desig;
+	private double basicPay;
+	private double DA;
+	private double TA;
+	private double HRA;
+	private double rent;
+	private double bonus;
+	private double targetpay;
+	private String lastCompany;
+	private String pemail;
+	private String semail;
+	private int Status;
+	private Date dOB;
+	
+	public Date getDOB() {
+<span class="nc" id="L48">		return dOB;</span>
+	}
+	public void setDOB(Date dOB) {
+<span class="nc" id="L51">		this.dOB = dOB;</span>
+<span class="nc" id="L52">	}</span>
+	public Date getDOL() {
+<span class="nc" id="L54">		return dOL;</span>
+	}
+	public void setDOL(Date dOL) {
+<span class="nc" id="L57">		this.dOL = dOL;</span>
+<span class="nc" id="L58">	}</span>
+	public String getPemail() {
+<span class="nc" id="L60">		return pemail;</span>
+	}
+	public void setPemail(String pemail) {
+<span class="nc" id="L63">		this.pemail = pemail;</span>
+<span class="nc" id="L64">	}</span>
+	public String getSemail() {
+<span class="nc" id="L66">		return semail;</span>
+	}
+	public void setSemail(String semail) {
+<span class="nc" id="L69">		this.semail = semail;</span>
+<span class="nc" id="L70">	}</span>
+	public EmpBean() {
+<span class="nc" id="L72">		super();</span>
+<span class="nc" id="L73">	}</span>
+	public String getEmpfName() {
+<span class="nc" id="L75">		return empfName;</span>
+	}
+	public void setEmpfName(String empfName) {
+<span class="nc" id="L78">		this.empfName = empfName;</span>
+<span class="nc" id="L79">	}</span>
+	public String getEmpmName() {
+<span class="nc" id="L81">		return empmName;</span>
+	}
+	public void setEmpmName(String empmName) {
+<span class="nc" id="L84">		this.empmName = empmName;</span>
+<span class="nc" id="L85">	}</span>
+	public String getEmplName() {
+<span class="nc" id="L87">		return emplName;</span>
+	}
+	public void setEmplName(String emplName) {
+<span class="nc" id="L90">		this.emplName = emplName;</span>
+<span class="nc" id="L91">	}</span>
+	public String getPassword() {
+<span class="nc" id="L93">		return password;</span>
+	}
+	public void setPassword(String password) {
+<span class="nc" id="L96">		this.password = password;</span>
+<span class="nc" id="L97">	}</span>
+	public String getEmpID() {
+<span class="nc" id="L99">		return empID;</span>
+	}
+	public void setEmpID(String empID) {
+<span class="nc" id="L102">		this.empID = empID;</span>
+<span class="nc" id="L103">	}</span>
+	public String getPriAddr() {
+<span class="nc" id="L105">		return priAddr;</span>
+	}
+	public void setPriAddr(String priAddr) {
+<span class="nc" id="L108">		this.priAddr = priAddr;</span>
+<span class="nc" id="L109">	}</span>
+	public String getSecAddr() {
+<span class="nc" id="L111">		return secAddr;</span>
+	}
+	public void setSecAddr(String secAddr) {
+<span class="nc" id="L114">		this.secAddr = secAddr;</span>
+<span class="nc" id="L115">	}</span>
+	public String getFather() {
+<span class="nc" id="L117">		return father;</span>
+	}
+	public void setFather(String father) {
+<span class="nc" id="L120">		this.father = father;</span>
+<span class="nc" id="L121">	}</span>
+	public String getMother() {
+<span class="nc" id="L123">		return mother;</span>
+	}
+	public void setMother(String mother) {
+<span class="nc" id="L126">		this.mother = mother;</span>
+<span class="nc" id="L127">	}</span>
+	public String getSpouse() {
+<span class="nc" id="L129">		return spouse;</span>
+	}
+	public void setSpouse(String spouse) {
+<span class="nc" id="L132">		this.spouse = spouse;</span>
+<span class="nc" id="L133">	}</span>
+	public String getAadhar() {
+<span class="nc" id="L135">		return aadhar;</span>
+	}
+	public void setAadhar(String addhaar) {
+<span class="nc" id="L138">		this.aadhar = addhaar;</span>
+<span class="nc" id="L139">	}</span>
+	public String getPanCard() {
+<span class="nc" id="L141">		return panCard;</span>
+	}
+	public void setPanCard(String panCard) {
+<span class="nc" id="L144">		this.panCard = panCard;</span>
+<span class="nc" id="L145">	}</span>
+	public String getPassport() {
+<span class="nc" id="L147">		return passport;</span>
+	}
+	public void setPassport(String passport) {
+<span class="nc" id="L150">		this.passport = passport;</span>
+<span class="nc" id="L151">	}</span>
+	public Date getDOJ() {
+<span class="nc" id="L153">		return dOJ;</span>
+	}
+	public void setDOJ(Date dOJ) {
+<span class="nc" id="L156">		this.dOJ = dOJ;</span>
+<span class="nc" id="L157">	}</span>
+	public String getSecMob() {
+<span class="nc" id="L159">		return secMob;</span>
+	}
+	public void setSecMob(String secMob) {
+<span class="nc" id="L162">		this.secMob = secMob;</span>
+<span class="nc" id="L163">	}</span>
+	public String getPriMob() {
+<span class="nc" id="L165">		return priMob;</span>
+	}
+	public void setPriMob(String priMob) {
+<span class="nc" id="L168">		this.priMob = priMob;</span>
+<span class="nc" id="L169">	}</span>
+	public String getGender() {
+<span class="nc" id="L171">		return gender;</span>
+	}
+	public void setGender(String gender) {
+<span class="nc" id="L174">		this.gender = gender;</span>
+<span class="nc" id="L175">	}</span>
+	public String getBloodGroup() {
+<span class="nc" id="L177">		return bloodGroup;</span>
+	}
+	public void setBloodGroup(String bloodGroup) {
+<span class="nc" id="L180">		this.bloodGroup = bloodGroup;</span>
+<span class="nc" id="L181">	}</span>
+	public String getTermsAndCondition() {
+<span class="nc" id="L183">		return termsAndCondition;</span>
+	}
+	public void setTermsAndCondition(String string) {
+<span class="nc" id="L186">		this.termsAndCondition = string;</span>
+<span class="nc" id="L187">	}</span>
+	public int getStatus() {
+<span class="nc" id="L189">		return Status;</span>
+	}
+	public void setStatus(int status) {
+<span class="nc" id="L192">		Status = status;</span>
+<span class="nc" id="L193">	}</span>
+	public String getBranch() {
+<span class="nc" id="L195">		return branch;</span>
+	}
+	public void setBranch(String workLocation) {
+<span class="nc" id="L198">		this.branch = workLocation;</span>
+<span class="nc" id="L199">	}</span>
+	public String getOfficeAddr() {
+<span class="nc" id="L201">		return OfficeAddr;</span>
+	}
+	public void setOfficeAddr(String officeAddr) {
+<span class="nc" id="L204">		OfficeAddr = officeAddr;</span>
+<span class="nc" id="L205">	}</span>
+	public String getDesig() {
+<span class="nc" id="L207">		return desig;</span>
+	}
+	public void setDesig(String desig) {
+<span class="nc" id="L210">		this.desig = desig;</span>
+<span class="nc" id="L211">	}</span>
+	public double getBasicPay() {
+<span class="nc" id="L213">		return basicPay;</span>
+	}
+	public void setBasicPay(double basicPay) {
+<span class="nc" id="L216">		this.basicPay = basicPay;</span>
+<span class="nc" id="L217">	}</span>
+	public double getDA() {
+<span class="nc" id="L219">		return DA;</span>
+	}
+	public void setDA(double dA) {
+<span class="nc" id="L222">		DA = dA;</span>
+<span class="nc" id="L223">	}</span>
+	public double getTA() {
+<span class="nc" id="L225">		return TA;</span>
+	}
+	public void setTA(double tA) {
+<span class="nc" id="L228">		TA = tA;</span>
+<span class="nc" id="L229">	}</span>
+	public double getHRA() {
+<span class="nc" id="L231">		return HRA;</span>
+	}
+	public void setHRA(double hRA) {
+<span class="nc" id="L234">		HRA = hRA;</span>
+<span class="nc" id="L235">	}</span>
+	public double getRent() {
+<span class="nc" id="L237">		return rent;</span>
+	}
+	public void setRent(double rent) {
+<span class="nc" id="L240">		this.rent = rent;</span>
+<span class="nc" id="L241">	}</span>
+	public double getBonus() {
+<span class="nc" id="L243">		return bonus;</span>
+	}
+	public void setBonus(double bonus) {
+<span class="nc" id="L246">		this.bonus = bonus;</span>
+<span class="nc" id="L247">	}</span>
+	public double getTargetpay() {
+<span class="nc" id="L249">		return targetpay;</span>
+	}
+	public void setTargetpay(double targetpay) {
+<span class="nc" id="L252">		this.targetpay = targetpay;</span>
+<span class="nc" id="L253">	}</span>
+	public String getLastCompany() {
+<span class="nc" id="L255">		return lastCompany;</span>
+	}
+	public void setLastCompany(String lastCompany) {
+<span class="nc" id="L258">		this.lastCompany = lastCompany;</span>
+<span class="nc" id="L259">	}</span>
+	
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

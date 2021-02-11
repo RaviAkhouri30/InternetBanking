@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>UserRegistration1.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">UserRegistration1.java</span></div><h1>UserRegistration1.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.solution.ib.bean.CustomerBean;
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class UserRegistration1
+ */
+@WebServlet(&quot;/UserRegistration1&quot;)
+public class UserRegistration1 extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public UserRegistration1() {
+<span class="nc" id="L31">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L33">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L43">		Logger LOGGER = Logger.getLogger(UserRegistration1.class.getName());</span>
+		try {
+<span class="nc" id="L45">		CustomerBean bean = new CustomerBean();</span>
+<span class="nc" id="L46">		bean.setCustfName(request.getParameter(&quot;fname&quot;));</span>
+<span class="nc" id="L47">		bean.setCustlName(request.getParameter(&quot;lname&quot;));</span>
+<span class="nc" id="L48">		bean.setPemail(request.getParameter(&quot;mail&quot;));</span>
+<span class="nc" id="L49">		bean.setCustID(request.getParameter(&quot;uname&quot;));</span>
+<span class="nc" id="L50">		String d = request.getParameter(&quot;dob&quot;);</span>
+<span class="nc bnc" id="L51" title="All 10 branches missed.">		if(bean.getCustID()==null || bean.getCustfName()==null || bean.getCustlName()==null || bean.getPemail()==null || d==null) {</span>
+<span class="nc" id="L52">			response.sendRedirect(&quot;index.jsp?msg=regFailed&quot;);</span>
+<span class="nc" id="L53">			return;</span>
+		}else {
+<span class="nc" id="L55">			Date date = null;</span>
+			try {
+<span class="nc" id="L57">				date= new SimpleDateFormat(&quot;yyyy-MM-dd&quot;).parse(d);</span>
+<span class="nc" id="L58">			} catch (ParseException e) {</span>
+				try {
+<span class="nc" id="L60">				response.sendRedirect(&quot;index.jsp?msg=regFailed&quot;);</span>
+<span class="nc" id="L61">				}catch (Exception e1) {</span>
+<span class="nc" id="L62">					LOGGER.log(Level.WARNING,&quot;error&quot;,e1 );</span>
+				}
+<span class="nc" id="L64">				return;</span>
+			}
+<span class="nc" id="L66">	bean.setDOB(date);</span>
+	
+<span class="nc bnc" id="L68" title="All 2 branches missed.">	if(request.getParameter(&quot;passi&quot;).equals(request.getParameter(&quot;passc&quot;))) {</span>
+<span class="nc" id="L69">		bean.setPassword(request.getParameter(&quot;passi&quot;));</span>
+<span class="nc" id="L70">	}else {</span>
+		try {
+<span class="nc" id="L72">		response.sendRedirect(&quot;index.jsp?msg=regFailed&quot;);</span>
+<span class="nc" id="L73">		}catch (Exception e) {</span>
+<span class="nc" id="L74">			LOGGER.log(Level.WARNING,&quot;error&quot;,e );</span>
+<span class="nc" id="L75">			return;</span>
+		}
+	}
+<span class="nc" id="L78">	BankingDao dao = new BankingDao();</span>
+	boolean reg;
+	try {
+<span class="nc" id="L81">		reg = dao.createCustomer(bean);</span>
+<span class="nc" id="L82">	} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L83">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L84">		return;</span>
+	}
+<span class="nc bnc" id="L86" title="All 4 branches missed.">		if(dao.createCustomerDetails(bean)==true &amp;&amp; reg==true) {</span>
+			try {
+<span class="nc" id="L88">			response.sendRedirect(&quot;index.jsp?msg=reg&quot;);</span>
+<span class="nc" id="L89">			}catch (Exception e) {</span>
+<span class="nc" id="L90">				LOGGER.log(Level.WARNING,&quot;error&quot;,e );</span>
+			}
+<span class="nc" id="L92">		}else {</span>
+			try {
+<span class="nc" id="L94">			response.sendRedirect(&quot;index.jsp?msg=regFailed&quot;);</span>
+<span class="nc" id="L95">			}catch (Exception e) {</span>
+<span class="nc" id="L96">				LOGGER.log(Level.WARNING,&quot;error&quot;,e );</span>
+			}
+		}
+		}	
+<span class="nc" id="L100">		}catch (Exception e) {</span>
+<span class="nc" id="L101">			LOGGER.log(Level.WARNING,&quot;error&quot;,e );</span>
+		}
+<span class="nc" id="L103">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>FetchState1.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">FetchState1.java</span></div><h1>FetchState1.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class FetchState1
+ */
+@WebServlet(&quot;/FetchState1&quot;)
+public class FetchState1 extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public FetchState1() {
+<span class="nc" id="L28">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L30">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L39">		Logger LOGGER = Logger.getLogger(FetchState1.class.getName());</span>
+		try {
+<span class="nc" id="L41">		String state = request.getParameter(&quot;state1&quot;);</span>
+<span class="nc" id="L42">		String count = request.getParameter(&quot;country1&quot;);</span>
+<span class="nc" id="L43">		BankingDao dao = new BankingDao();</span>
+<span class="nc" id="L44">		ArrayList&lt;String&gt; st = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L45">		st = dao.fetchBranchState(state, count);</span>
+<span class="nc" id="L46">		String data = new String();</span>
+<span class="nc" id="L47">		PrintWriter out = response.getWriter();</span>
+<span class="nc" id="L48">		data = &quot;&lt;datalist id ='statenames1'&gt;&quot;;</span>
+<span class="nc bnc" id="L49" title="All 2 branches missed.">		for (String string : st) {</span>
+<span class="nc" id="L50">			data = data + &quot;&lt;option value='&quot;+string+&quot;'&gt;&quot;;</span>
+		}
+<span class="nc" id="L52">		data = data + &quot;&lt;/datalist&gt;&quot;;</span>
+<span class="nc" id="L53">		out.print(data);</span>
+<span class="nc" id="L54">		} catch (UnknownHostException e) {</span>
+<span class="nc" id="L55">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+<span class="nc" id="L56">		}catch (Exception e) {</span>
+<span class="nc" id="L57">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+		}
+<span class="nc" id="L59">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

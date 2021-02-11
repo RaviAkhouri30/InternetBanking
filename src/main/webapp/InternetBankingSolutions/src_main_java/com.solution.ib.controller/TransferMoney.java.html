@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>TransferMoney.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">TransferMoney.java</span></div><h1>TransferMoney.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.Date;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import com.solution.ib.bean.AccDetails;
+import com.solution.ib.bean.TransactionBean;
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class TransferMoney
+ */
+@WebServlet(&quot;/TransferMoney&quot;)
+public class TransferMoney extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public TransferMoney() {
+<span class="nc" id="L31">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L33">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L43">		Logger LOGGER = Logger.getLogger(TransferMoney.class.getName());</span>
+		try {
+<span class="nc" id="L45">		String toacc = request.getParameter(&quot;toaccno&quot;);</span>
+<span class="nc" id="L46">		AccDetails det = new AccDetails();</span>
+<span class="nc" id="L47">		HttpSession session = request.getSession();</span>
+<span class="nc" id="L48">		det = (AccDetails)session.getAttribute(&quot;acc_det&quot;);</span>
+<span class="nc" id="L49">		String fromacc = det.getAcc_No();</span>
+<span class="nc" id="L50">		String amt = request.getParameter(&quot;money&quot;);</span>
+<span class="nc" id="L51">		TransactionBean bean = new TransactionBean();</span>
+<span class="nc" id="L52">		bean.setAmount(amt);</span>
+<span class="nc" id="L53">		Date date = new Date();</span>
+<span class="nc" id="L54">		bean.setFromAccount(fromacc);</span>
+<span class="nc" id="L55">		bean.setToAccount(toacc);</span>
+<span class="nc" id="L56">		BankingDao dao = new BankingDao();</span>
+<span class="nc" id="L57">		PrintWriter out = response.getWriter();</span>
+<span class="nc" id="L58">		String toAccBal = dao.balance(toacc);</span>
+<span class="nc" id="L59">		String fromAccBal = dao.balance(fromacc);</span>
+<span class="nc" id="L60">		int amount = Integer.parseInt(amt);</span>
+<span class="nc" id="L61">		int toBal = Integer.parseInt(toAccBal);</span>
+<span class="nc" id="L62">		int frBal = Integer.parseInt(fromAccBal);</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">		if(frBal&gt;amount) {</span>
+<span class="nc" id="L64">			toBal = toBal+amount;</span>
+<span class="nc" id="L65">			frBal = frBal-amount;</span>
+<span class="nc" id="L66">			StringBuffer toBal1 = new StringBuffer();</span>
+<span class="nc" id="L67">			toBal1.append(toBal);</span>
+<span class="nc" id="L68">			StringBuffer frBal1 = new StringBuffer();</span>
+<span class="nc" id="L69">			frBal1.append(frBal);</span>
+<span class="nc" id="L70">			dao.updateBalance(toacc, toBal1.toString());</span>
+<span class="nc" id="L71">			dao.updateBalance(fromacc, frBal1.toString());</span>
+<span class="nc" id="L72">			dao.transfer(bean, date);</span>
+<span class="nc" id="L73">			out.print(&quot;&lt;div id = 'error'&gt;WooHoo!!!Transferred Successfully!!!&lt;/div&gt;&quot;);</span>
+<span class="nc" id="L74">		}else {</span>
+<span class="nc" id="L75">			out.print(&quot;&lt;div id = 'error'&gt;Transfer Failed! Transfer Amount is higher than Balance Available&lt;/div&gt;&quot;);</span>
+		}
+<span class="nc" id="L77">		} catch (UnknownHostException e) {</span>
+<span class="nc" id="L78">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+<span class="nc" id="L79">		}catch (Exception e) {</span>
+<span class="nc" id="L80">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+		}
+<span class="nc" id="L82">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

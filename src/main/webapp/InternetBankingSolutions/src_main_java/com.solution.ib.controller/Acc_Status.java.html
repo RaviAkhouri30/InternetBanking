@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>Acc_Status.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">Acc_Status.java</span></div><h1>Acc_Status.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import org.springframework.web.servlet.HttpServletBean;
+import javax.servlet.annotation.WebServlet;
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class Acc_Status
+ */
+@WebServlet(&quot;/Acc_Status&quot;)
+public class Acc_Status extends HttpServletBean {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public Acc_Status() {
+<span class="nc" id="L27">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L29">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	
+
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L40">		Logger LOGGER = Logger.getLogger(Acc_Status.class.getName());</span>
+		try {
+<span class="nc" id="L42">		String custid = request.getParameter(&quot;status&quot;);</span>
+<span class="nc" id="L43">		BankingDao dao = new BankingDao();</span>
+<span class="nc" id="L44">		String output = new String();</span>
+<span class="nc" id="L45">		String msg = new String();</span>
+<span class="nc" id="L46">		int st = dao.AccStatus(custid);</span>
+		
+<span class="nc bnc" id="L48" title="All 2 branches missed.">		if(st==0) {</span>
+<span class="nc" id="L49">			msg =&quot;!!!Customer ID Not Found!!!&quot;;</span>
+<span class="nc bnc" id="L50" title="All 2 branches missed.">		}else if(st==1) {</span>
+<span class="nc" id="L51">			msg =&quot;!!!Please Complete Your Registration to be part of Our Bank!!!&quot;;</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">		}else if(st==2) {</span>
+<span class="nc" id="L53">			msg = &quot;Your Application for new Account is Under Verification. We will inform you Once your Varification is Done&quot;;</span>
+<span class="nc bnc" id="L54" title="All 2 branches missed.">		}else if(st==3) {</span>
+<span class="nc" id="L55">			msg =&quot;Wohoo, Your Account is Activated and Ready to Use!!!&quot;;</span>
+<span class="nc bnc" id="L56" title="All 2 branches missed.">		}else if(st==4) {</span>
+<span class="nc" id="L57">			msg = &quot;Sorry! Your Account is Not Active!!!&quot;;</span>
+<span class="nc" id="L58">		}else {</span>
+<span class="nc" id="L59">			msg =&quot;!!!Customer ID Not Found!!!&quot;;</span>
+		}
+<span class="nc" id="L61">		output = &quot;&lt;table&gt;&quot;;</span>
+<span class="nc" id="L62">		output = output+&quot;&lt;tr&gt;&quot;;</span>
+<span class="nc" id="L63">		output = output+&quot;&lt;th&gt;Customer ID&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L64">		output = output+&quot;&lt;th&gt;Status&lt;/th&gt;&quot;;</span>
+<span class="nc" id="L65">		output = output+&quot;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L66">		output = output +&quot;&lt;tr&gt;&quot;;</span>
+<span class="nc" id="L67">		output = output+&quot;&lt;td&gt;&quot;+custid+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L68">		output = output+&quot;&lt;td&gt;&quot;+msg+&quot;&lt;/td&gt;&quot;;</span>
+<span class="nc" id="L69">		output = output +&quot;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L70">		output = output +&quot;&lt;/table&gt;&quot;;</span>
+<span class="nc" id="L71">			PrintWriter out = response.getWriter();</span>
+<span class="nc" id="L72">			out.print(output);</span>
+<span class="nc" id="L73">			out.close();</span>
+<span class="nc" id="L74">		} catch (UnknownHostException e) {</span>
+<span class="nc" id="L75">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+<span class="nc" id="L76">		}catch (Exception e) {</span>
+<span class="nc" id="L77">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+		}
+<span class="nc" id="L79">	}</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

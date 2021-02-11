@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>ViewEmployeeCompleteDetails.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.controller</a> &gt; <span class="el_source">ViewEmployeeCompleteDetails.java</span></div><h1>ViewEmployeeCompleteDetails.java</h1><pre class="source lang-java linenums">package com.solution.ib.controller;
+
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.logging.Logger;
+
+import javax.servlet.ServletException;
+import javax.servlet.annotation.WebServlet;
+import javax.servlet.http.HttpServlet;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.solution.ib.bean.EmpBean;
+import com.solution.ib.dao.BankingDao;
+
+/**
+ * Servlet implementation class ViewEmployeeCompleteDetails
+ */
+@WebServlet(&quot;/ViewEmployeeCompleteDetails&quot;)
+public class ViewEmployeeCompleteDetails extends HttpServlet {
+	private static final long serialVersionUID = 1L;
+       
+    /**
+     * @see HttpServlet#HttpServlet()
+     */
+    public ViewEmployeeCompleteDetails() {
+<span class="nc" id="L30">        super();</span>
+        // TODO Auto-generated constructor stub
+<span class="nc" id="L32">    }</span>
+
+	/**
+	 * @see HttpServlet#doGet(HttpServletRequest request, HttpServletResponse response)
+	 */
+	/**
+	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse response)
+	 */
+	protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+<span class="nc" id="L41">		Logger LOGGER = Logger.getLogger(ViewEmployeeCompleteDetails.class.getName());</span>
+		try {
+<span class="nc" id="L43">		PrintWriter print = response.getWriter();</span>
+<span class="nc" id="L44">		ArrayList&lt;EmpBean&gt; empData = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L45">		String id = request.getParameter(&quot;empid&quot;);</span>
+<span class="nc" id="L46">		BankingDao data = new BankingDao();</span>
+<span class="nc" id="L47">		empData = data.empView(id);</span>
+<span class="nc" id="L48">		Iterator&lt;EmpBean&gt; iData = empData.iterator();</span>
+<span class="nc" id="L49">		String send =&quot;&lt;input type=\&quot;image\&quot; src=\&quot;images/BackButton.jpg\&quot; style=\&quot;height: 50px; outline: none; width: 50px; margin-top: 20px; margin-right: 100px;\&quot; onclick=\&quot;view()\&quot;&gt;&quot;;</span>
+<span class="nc" id="L50">		send = send + &quot;&lt;table&gt;&quot;;</span>
+<span class="nc bnc" id="L51" title="All 2 branches missed.">		while (iData.hasNext()) {</span>
+<span class="nc" id="L52">			EmpBean empBean = (EmpBean) iData.next();</span>
+<span class="nc" id="L53">			send = send +&quot;&lt;tr&gt;&lt;td&gt; Employee ID: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getEmpID()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L54">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Name of Employee: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getEmpfName()+&quot; &quot;+empBean.getEmplName()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L55">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Designation: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getDesig()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L56">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Father's Name: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getFather()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L57">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Mother's Name: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getMother()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L58">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Aadhaar: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getAadhar()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L59">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Pan Card Number: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getPanCard()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L60">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Passport Number: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getPassport()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L61">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Blood Group: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getBloodGroup()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L62">			String status = new String();</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">			if(empBean.getStatus()==1) {</span>
+<span class="nc" id="L64">				status =&quot;Registration Pending&quot;;</span>
+			}
+<span class="nc bnc" id="L66" title="All 2 branches missed.">			if(empBean.getStatus()==2) {</span>
+<span class="nc" id="L67">				status =&quot;Review Pending&quot;;</span>
+			}
+<span class="nc bnc" id="L69" title="All 2 branches missed.">			if(empBean.getStatus()==3) {</span>
+<span class="nc" id="L70">				status =&quot;Verification Done&quot;;</span>
+			}
+<span class="nc bnc" id="L72" title="All 2 branches missed.">			if(empBean.getStatus()==4) {</span>
+<span class="nc" id="L73">				status =&quot;Resigned job&quot;;</span>
+			}
+<span class="nc" id="L75">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Account Status: &lt;/td&gt;&lt;td&gt;&quot;+status+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L76">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Last Company: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getLastCompany()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L77">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Date of Birth: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getDOB()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L78">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Date of Leaving: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getDOL()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L79">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Branch: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getBranch()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L80">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Primary Mobile: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getPriMob()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L81">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Secondary Mobile: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getSecMob()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L82">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Present Address: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getPriAddr()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+<span class="nc" id="L83">			send = send + &quot;&lt;tr&gt;&lt;td&gt;Permanent Address: &lt;/td&gt;&lt;td&gt;&quot;+empBean.getSecAddr()+&quot;&lt;/td&gt;&lt;/tr&gt;&quot;;</span>
+		}
+<span class="nc" id="L85">		send = send +&quot;&lt;/table&gt;&quot;;</span>
+<span class="nc" id="L86">		send =send +&quot;&lt;input type=\&quot;image\&quot; src=\&quot;images/BackButton.jpg\&quot; style=\&quot;height: 50px; outline: none; width: 50px; margin-top: 20px; margin-right: 100px;\&quot; onclick=\&quot;view()\&quot;&gt;&quot;;</span>
+<span class="nc" id="L87">		print.print(send);</span>
+<span class="nc" id="L88">		} catch (UnknownHostException e) {</span>
+<span class="nc" id="L89">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+<span class="nc" id="L90">		}catch (Exception e) {</span>
+<span class="nc" id="L91">			LOGGER.log(java.util.logging.Level.WARNING,&quot;error&quot;, e);</span>
+		}
+<span class="nc" id="L93">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>

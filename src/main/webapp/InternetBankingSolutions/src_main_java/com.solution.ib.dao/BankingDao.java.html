@@ -1,0 +1,2265 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../../jacoco-resources/report.gif" type="image/gif"/><title>BankingDao.java</title><link rel="stylesheet" href="../../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../../index.html" class="el_report">test (3) (8 Jan, 2020 12:51:56 AM)</a> &gt; <a href="../../index.html" class="el_group">InternetBankingSolutions</a> &gt; <a href="../index.html" class="el_bundle">src/main/java</a> &gt; <a href="index.source.html" class="el_package">com.solution.ib.dao</a> &gt; <span class="el_source">BankingDao.java</span></div><h1>BankingDao.java</h1><pre class="source lang-java linenums">package com.solution.ib.dao;
+
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import com.solution.ib.bean.AccDetails;
+import com.solution.ib.bean.Benifieceiry;
+import com.solution.ib.bean.BranchBean;
+import com.solution.ib.bean.CardBean;
+import com.solution.ib.bean.CustomerBean;
+import com.solution.ib.bean.EmpBean;
+import com.solution.ib.bean.TransactionBean;
+import com.solution.ib.util.DBUtil;
+
+
+<span class="fc" id="L26">public class BankingDao {</span>
+<span class="fc" id="L27">	private Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+	
+	public boolean validateEmp(String empName, String password,int status) throws NoSuchAlgorithmException, SQLException {
+<span class="fc" id="L30">		StringBuffer sql = new StringBuffer();</span>
+<span class="fc" id="L31">		sql.append(&quot;select * from emp_tbl where empid='&quot;);</span>
+<span class="fc" id="L32">		sql.append(empName);</span>
+<span class="fc" id="L33">		sql.append(&quot;' AND password='&quot;);</span>
+<span class="pc bpc" id="L34" title="6 of 8 branches missed.">		if(status==1 || status==9 || status==2 || status==3) {</span>
+<span class="fc" id="L35">			String securePassword = toHexString(getPasswordSHA(password));</span>
+<span class="fc" id="L36">			boolean ret = false;</span>
+<span class="fc" id="L37">			sql.append(securePassword);</span>
+<span class="fc" id="L38">			sql.append(&quot;' AND status='&quot;);</span>
+<span class="fc" id="L39">			sql.append(status);</span>
+<span class="fc" id="L40">			sql.append(&quot;'&quot;);</span>
+<span class="fc" id="L41">			try (Statement st = DBUtil.getDBConnection().createStatement()) {</span>
+<span class="fc" id="L42">				try (ResultSet rs = st.executeQuery(sql.toString())){</span>
+<span class="fc" id="L43">					ret = rs.next();</span>
+				} finally {
+<span class="fc" id="L45">					st.getResultSet().close();</span>
+				}
+			} finally {
+<span class="fc" id="L48">				DBUtil.getDBConnection().close();</span>
+			}
+<span class="fc" id="L50">			return ret;</span>
+		}else {
+<span class="nc" id="L52">			return false;</span>
+		}
+	}
+	
+	public int statusCheck(String empid) {
+<span class="nc" id="L57">		int status = 0;</span>
+<span class="nc" id="L58">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L59">		String sql = &quot;select status from emp_tbl where empid=?&quot;;</span>
+<span class="nc" id="L60">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L61">			ps.setString(1, empid);</span>
+<span class="nc" id="L62">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L63" title="All 2 branches missed.">				while(rs.next())</span>
+<span class="nc" id="L64">					status = rs.getInt(1);</span>
+			} finally {
+<span class="nc" id="L66">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L68">		} catch (SQLException e) {</span>
+<span class="nc" id="L69">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L72">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L73">			} catch (SQLException e) {</span>
+<span class="nc" id="L74">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L77">		return status;</span>
+	}
+	
+	public EmpBean empDetails(String empId) {
+<span class="nc" id="L81">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L82">		String sql = &quot;select * from emp_details where empid=?&quot;;</span>
+<span class="nc" id="L83">		EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L84">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L85">			ps.setString(1, empId);</span>
+<span class="nc" id="L86">			try(ResultSet rs = ps.executeQuery()) {</span>
+<span class="nc" id="L87">				rs.next();</span>
+<span class="nc" id="L88">				bean.setEmpID(empId);</span>
+<span class="nc" id="L89">				bean.setEmpfName(rs.getString(1));</span>
+<span class="nc" id="L90">				bean.setEmpmName(rs.getString(2));</span>
+<span class="nc" id="L91">				bean.setEmplName(rs.getString(3));</span>
+<span class="nc" id="L92">				bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L93">				bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L94">				bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L95">				bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L96">				bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L97">				bean.setAadhar(rs.getString(10));</span>
+<span class="nc" id="L98">				bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L99">				bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L100">				bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L101">				bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L102">				bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L103">				bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L104">				bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L105">				bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L106">				bean.setBranch(rs.getString(20));</span>
+<span class="nc" id="L107">				bean.setDesig(rs.getString(21));</span>
+<span class="nc" id="L108">				bean.setBasicPay(rs.getDouble(22));</span>
+<span class="nc" id="L109">				bean.setDA(rs.getDouble(23));</span>
+<span class="nc" id="L110">				bean.setTA(rs.getDouble(24));</span>
+<span class="nc" id="L111">				bean.setHRA(rs.getDouble(25));</span>
+<span class="nc" id="L112">				bean.setRent(rs.getDouble(26));</span>
+<span class="nc" id="L113">				bean.setBonus(rs.getDouble(27));</span>
+<span class="nc" id="L114">				bean.setTargetpay(rs.getDouble(28));</span>
+<span class="nc" id="L115">				bean.setPemail(rs.getString(29));</span>
+<span class="nc" id="L116">				bean.setSemail(rs.getString(30));</span>
+<span class="nc" id="L117">				bean.setDOL(rs.getDate(31));</span>
+<span class="nc" id="L118">				bean.setDOB(rs.getDate(32));</span>
+			} finally {
+<span class="nc" id="L120">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L122">		} catch (SQLException e) {</span>
+<span class="nc" id="L123">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L126">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L127">			} catch (SQLException e) {</span>
+<span class="nc" id="L128">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L131">		return bean;</span>
+	}
+	public String createPassword(String fname, String lname, String dob) {
+<span class="nc" id="L134">		dob=dob.replaceAll(&quot;-&quot;, &quot;&quot;);</span>
+<span class="nc" id="L135">		StringBuffer pass = new StringBuffer();</span>
+<span class="nc" id="L136">		pass.append(fname.substring(0, 2));</span>
+<span class="nc" id="L137">		pass.append(lname.substring(0, 1));</span>
+<span class="nc" id="L138">		pass.append(&quot;@gib&quot;);</span>
+<span class="nc" id="L139">		return pass.toString().toUpperCase();</span>
+	}
+	public String generateEmpID(String empName) {
+<span class="fc" id="L142">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="fc" id="L143">		StringBuffer empID = new StringBuffer();</span>
+<span class="fc" id="L144">		empID.append(empName.substring(0, 4));</span>
+<span class="fc" id="L145">		String sql = &quot;select emp_seq.nextval from dual&quot;;</span>
+<span class="fc" id="L146">		try(PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)) {</span>
+<span class="fc" id="L147">			try(ResultSet rs = ps.executeQuery()) {</span>
+<span class="fc" id="L148">				rs.next();</span>
+<span class="fc" id="L149">				empID.append(rs.getInt(1));</span>
+			} finally {
+<span class="fc" id="L151">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L153">		} catch (SQLException e) {</span>
+<span class="nc" id="L154">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L157">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L158">			} catch (SQLException e) {</span>
+<span class="nc" id="L159">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="fc" id="L162">		return empID.toString().toUpperCase();</span>
+	}
+	public boolean validatePassword(String empid, String password){
+<span class="nc" id="L165">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L166">		String sql = &quot;select * from emp_tbl where empid=? and password=?&quot;;</span>
+<span class="nc" id="L167">		String securePassword=new String();</span>
+<span class="nc" id="L168">		boolean ret =false;</span>
+		try {
+<span class="nc" id="L170">			securePassword = toHexString(getPasswordSHA(password));</span>
+<span class="nc" id="L171">		} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L172">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L173">			ret = false;</span>
+		}
+<span class="nc" id="L175">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L176">			ps.setString(1, empid);</span>
+<span class="nc" id="L177">			ps.setString(2, securePassword);</span>
+<span class="nc" id="L178">			try(ResultSet rs = ps.executeQuery()) {</span>
+<span class="nc" id="L179">				ret = rs.next();</span>
+			} finally {
+<span class="nc" id="L181">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L183">		} catch (SQLException e) {</span>
+<span class="nc" id="L184">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L185">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L188">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L189">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L190">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L191">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L194">		return ret;</span>
+	}
+	public boolean changeEmpPassword(String empid, String pass) {
+<span class="nc" id="L197">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L198">		String sql = &quot;update emp_tbl set password = ? where empid = ?&quot;;</span>
+<span class="nc" id="L199">		int n=0;</span>
+<span class="nc" id="L200">		boolean ret =false;</span>
+<span class="nc" id="L201">			String securePassword= new String();</span>
+			try {
+<span class="nc" id="L203">				securePassword = toHexString(getPasswordSHA(pass));</span>
+<span class="nc" id="L204">			} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L205">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L206">				ret = false;</span>
+			}
+<span class="nc" id="L208">			try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L209">				ps.setString(1, securePassword);</span>
+<span class="nc" id="L210">				ps.setString(2, empid);</span>
+<span class="nc" id="L211">				n = ps.executeUpdate();</span>
+<span class="nc bnc" id="L212" title="All 2 branches missed.">				if(n&gt;0) {</span>
+<span class="nc" id="L213">					ret = true;</span>
+<span class="nc" id="L214">				}</span>
+				else {
+<span class="nc" id="L216">					ret = false;</span>
+				}
+<span class="nc" id="L218">			} catch (SQLException e) {</span>
+<span class="nc" id="L219">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L220">				ret = false;</span>
+			}finally {
+				try {
+<span class="nc" id="L223">					DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L224">				} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L225">					LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L226">					ret = false;</span>
+				}
+			}
+<span class="nc" id="L229">		return ret;	</span>
+	}
+	public ArrayList&lt;EmpBean&gt; empView() {
+<span class="nc" id="L232">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L233">		String sql = &quot;select * from emp_details where empid is not null and status&lt;5 order by empfname asc&quot;;</span>
+<span class="nc" id="L234">		ArrayList&lt;EmpBean&gt; det = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L235">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L236">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L237" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L238">					EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L239">					bean.setEmpID(rs.getString(4));</span>
+<span class="nc" id="L240">					bean.setEmpfName(rs.getString(1));</span>
+<span class="nc" id="L241">					bean.setEmpmName(rs.getString(2));</span>
+<span class="nc" id="L242">					bean.setEmplName(rs.getString(3));</span>
+<span class="nc" id="L243">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L244">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L245">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L246">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L247">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L248">					bean.setAadhar(rs.getString(10));</span>
+<span class="nc" id="L249">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L250">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L251">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L252">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L253">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L254">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L255">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L256">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L257">					bean.setBranch(rs.getString(20));</span>
+<span class="nc" id="L258">					bean.setDesig(rs.getString(21));</span>
+<span class="nc" id="L259">					bean.setBasicPay(rs.getDouble(22));</span>
+<span class="nc" id="L260">					bean.setDA(rs.getDouble(23));</span>
+<span class="nc" id="L261">					bean.setTA(rs.getDouble(24));</span>
+<span class="nc" id="L262">					bean.setHRA(rs.getDouble(25));</span>
+<span class="nc" id="L263">					bean.setRent(rs.getDouble(26));</span>
+<span class="nc" id="L264">					bean.setBonus(rs.getDouble(27));</span>
+<span class="nc" id="L265">					bean.setTargetpay(rs.getDouble(28));</span>
+<span class="nc" id="L266">					bean.setPemail(rs.getString(29));</span>
+<span class="nc" id="L267">					bean.setSemail(rs.getString(30));</span>
+<span class="nc" id="L268">					bean.setDOL(rs.getDate(31));</span>
+<span class="nc" id="L269">					bean.setDOB(rs.getDate(32));</span>
+<span class="nc" id="L270">					det.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L273">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L275">		} catch (SQLException e) {</span>
+<span class="nc" id="L276">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L277">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L280">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L281">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L282">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L285">		return det;</span>
+	}
+	public ArrayList&lt;EmpBean&gt; empView(String empid) {
+<span class="nc" id="L288">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L289">		String sql = &quot;select * from emp_details where empid=? and status&lt;5&quot;;</span>
+<span class="nc" id="L290">		ArrayList&lt;EmpBean&gt; det = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L291">		try(PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)) {</span>
+<span class="nc" id="L292">			ps.setString(1, empid);</span>
+<span class="nc" id="L293">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L294" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L295">					EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L296">					bean.setEmpID(rs.getString(4));</span>
+<span class="nc" id="L297">					bean.setEmpfName(rs.getString(1));</span>
+<span class="nc" id="L298">					bean.setEmpmName(rs.getString(2));</span>
+<span class="nc" id="L299">					bean.setEmplName(rs.getString(3));</span>
+<span class="nc" id="L300">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L301">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L302">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L303">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L304">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L305">					bean.setAadhar(rs.getString(10));</span>
+<span class="nc" id="L306">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L307">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L308">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L309">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L310">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L311">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L312">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L313">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L314">					bean.setBranch(rs.getString(20));</span>
+<span class="nc" id="L315">					bean.setDesig(rs.getString(21));</span>
+<span class="nc" id="L316">					bean.setBasicPay(rs.getDouble(22));</span>
+<span class="nc" id="L317">					bean.setDA(rs.getDouble(23));</span>
+<span class="nc" id="L318">					bean.setTA(rs.getDouble(24));</span>
+<span class="nc" id="L319">					bean.setHRA(rs.getDouble(25));</span>
+<span class="nc" id="L320">					bean.setRent(rs.getDouble(26));</span>
+<span class="nc" id="L321">					bean.setBonus(rs.getDouble(27));</span>
+<span class="nc" id="L322">					bean.setTargetpay(rs.getDouble(28));</span>
+<span class="nc" id="L323">					bean.setPemail(rs.getString(29));</span>
+<span class="nc" id="L324">					bean.setSemail(rs.getString(30));</span>
+<span class="nc" id="L325">					bean.setDOL(rs.getDate(31));</span>
+<span class="nc" id="L326">					bean.setDOB(rs.getDate(32));</span>
+<span class="nc" id="L327">					det.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L330">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L332">		} catch (SQLException e) {</span>
+<span class="nc" id="L333">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L334">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L337">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L338">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L339">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L342">		return det;</span>
+	}
+	public ArrayList&lt;EmpBean&gt; empPending() {
+<span class="nc" id="L345">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L346">		String sql = &quot;select * from emp_details where status=2&quot;;</span>
+<span class="nc" id="L347">		ArrayList&lt;EmpBean&gt; det = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L348">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L349">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L350" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L351">					EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L352">					bean.setEmpID(rs.getString(4));</span>
+<span class="nc" id="L353">					bean.setEmpfName(rs.getString(1));</span>
+<span class="nc" id="L354">					bean.setEmpmName(rs.getString(2));</span>
+<span class="nc" id="L355">					bean.setEmplName(rs.getString(3));</span>
+<span class="nc" id="L356">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L357">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L358">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L359">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L360">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L361">					bean.setAadhar(rs.getString(10));</span>
+<span class="nc" id="L362">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L363">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L364">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L365">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L366">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L367">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L368">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L369">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L370">					bean.setBranch(rs.getString(20));</span>
+<span class="nc" id="L371">					bean.setDesig(rs.getString(21));</span>
+<span class="nc" id="L372">					bean.setBasicPay(rs.getDouble(22));</span>
+<span class="nc" id="L373">					bean.setDA(rs.getDouble(23));</span>
+<span class="nc" id="L374">					bean.setTA(rs.getDouble(24));</span>
+<span class="nc" id="L375">					bean.setHRA(rs.getDouble(25));</span>
+<span class="nc" id="L376">					bean.setRent(rs.getDouble(26));</span>
+<span class="nc" id="L377">					bean.setBonus(rs.getDouble(27));</span>
+<span class="nc" id="L378">					bean.setTargetpay(rs.getDouble(28));</span>
+<span class="nc" id="L379">					bean.setPemail(rs.getString(29));</span>
+<span class="nc" id="L380">					bean.setSemail(rs.getString(30));</span>
+<span class="nc" id="L381">					bean.setDOL(rs.getDate(31));</span>
+<span class="nc" id="L382">					bean.setDOB(rs.getDate(32));</span>
+<span class="nc" id="L383">					det.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L386">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L388">		} catch (SQLException e) {</span>
+<span class="nc" id="L389">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L390">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L393">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L394">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L395">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L398">		return det;</span>
+	}
+	public ArrayList&lt;EmpBean&gt; empRecycleBin() {
+<span class="nc" id="L401">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L402">		String sql = &quot;select * from emp_details where status=5&quot;;</span>
+<span class="nc" id="L403">		ArrayList&lt;EmpBean&gt; det = new ArrayList&lt;EmpBean&gt;();</span>
+<span class="nc" id="L404">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L405">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L406" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L407">					EmpBean bean = new EmpBean();</span>
+<span class="nc" id="L408">					bean.setEmpID(rs.getString(4));</span>
+<span class="nc" id="L409">					bean.setEmpfName(rs.getString(1));</span>
+<span class="nc" id="L410">					bean.setEmpmName(rs.getString(2));</span>
+<span class="nc" id="L411">					bean.setEmplName(rs.getString(3));</span>
+<span class="nc" id="L412">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L413">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L414">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L415">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L416">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L417">					bean.setAadhar(rs.getString(10));</span>
+<span class="nc" id="L418">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L419">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L420">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L421">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L422">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L423">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L424">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L425">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L426">					bean.setBranch(rs.getString(20));</span>
+<span class="nc" id="L427">					bean.setDesig(rs.getString(21));</span>
+<span class="nc" id="L428">					bean.setBasicPay(rs.getDouble(22));</span>
+<span class="nc" id="L429">					bean.setDA(rs.getDouble(23));</span>
+<span class="nc" id="L430">					bean.setTA(rs.getDouble(24));</span>
+<span class="nc" id="L431">					bean.setHRA(rs.getDouble(25));</span>
+<span class="nc" id="L432">					bean.setRent(rs.getDouble(26));</span>
+<span class="nc" id="L433">					bean.setBonus(rs.getDouble(27));</span>
+<span class="nc" id="L434">					bean.setTargetpay(rs.getDouble(28));</span>
+<span class="nc" id="L435">					bean.setPemail(rs.getString(29));</span>
+<span class="nc" id="L436">					bean.setSemail(rs.getString(30));</span>
+<span class="nc" id="L437">					bean.setDOL(rs.getDate(31));</span>
+<span class="nc" id="L438">					bean.setDOB(rs.getDate(32));</span>
+<span class="nc" id="L439">					det.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L442">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L444">		} catch (SQLException e) {</span>
+<span class="nc" id="L445">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L446">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L449">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L450">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L451">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L454">		return det;</span>
+	}
+	public boolean updateEmpDetByAdmin(EmpBean bean) {
+<span class="nc" id="L457">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L458">		String sql = &quot;update emp_details set EMPFNAME=?,EMPLNAME=?,DOJ=?,DOB=?,BRANCH=?,PEMAIL=? where empid=?&quot;;</span>
+<span class="nc" id="L459">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L460">			ps.setString(1, bean.getEmpfName());</span>
+<span class="nc" id="L461">			ps.setString(2, bean.getEmplName());</span>
+<span class="nc" id="L462">			java.sql.Date doj = new java.sql.Date(bean.getDOJ().getTime());</span>
+<span class="nc" id="L463">			java.sql.Date dob = new java.sql.Date(bean.getDOB().getTime());</span>
+<span class="nc" id="L464">			ps.setDate(3, doj);</span>
+<span class="nc" id="L465">			ps.setDate(4, dob);</span>
+<span class="nc" id="L466">			ps.setString(5, bean.getBranch());</span>
+<span class="nc" id="L467">			ps.setString(6, bean.getPemail());</span>
+<span class="nc" id="L468">			ps.setString(7, bean.getEmpID());</span>
+<span class="nc" id="L469">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L470" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L471">				return true;</span>
+			}else {
+<span class="nc" id="L473">				return false;</span>
+			}
+<span class="nc" id="L475">		} catch (SQLException e) {</span>
+<span class="nc" id="L476">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L477">			return false;</span>
+		}finally {
+			try {
+<span class="nc" id="L480">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L481">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L482">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+	}
+	public boolean createEmp( String empID,String pass, String fname, String lname) {
+<span class="nc" id="L487">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L488">		int n=0;</span>
+<span class="nc" id="L489">		String sql = &quot;insert into emp_tbl (empid, empfname, emplname, password, status) values (?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L490">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L491">			ps.setString(1, empID);</span>
+<span class="nc" id="L492">			ps.setString(2, fname);</span>
+<span class="nc" id="L493">			ps.setString(3, lname);</span>
+<span class="nc" id="L494">			ps.setString(4, pass);</span>
+<span class="nc" id="L495">			ps.setInt(5, 1);</span>
+<span class="nc" id="L496">			n = ps.executeUpdate();</span>
+<span class="nc" id="L497">		} catch (SQLException e) {</span>
+<span class="nc" id="L498">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L501">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L502">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L503">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc bnc" id="L506" title="All 2 branches missed.">		if(n==1)</span>
+<span class="nc" id="L507">			return true;</span>
+		else
+<span class="nc" id="L509">			return false;</span>
+	}
+	
+	public boolean setEmpDetails(EmpBean bean) {
+<span class="nc" id="L513">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L514">		String sql = &quot;insert into emp_details (empid, empfname, doj, emplname, branch, pemail, dob,status) values(?,?,?,?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L515">		BankingDao dao = new BankingDao();</span>
+		
+<span class="nc" id="L517">			String id = dao.generateEmpID(bean.getEmpfName());</span>
+<span class="nc bnc" id="L518" title="All 2 branches missed.">			if(id==null) {</span>
+<span class="nc" id="L519">				return false;</span>
+			}else {
+<span class="nc" id="L521">				bean.setEmpID(id);</span>
+			}
+<span class="nc" id="L523">			String securePassword= new String();</span>
+			try {
+<span class="nc" id="L525">				securePassword = toHexString(getPasswordSHA(dao.createPassword(bean.getEmpfName(), bean.getEmplName(), bean.getDOB().toString())));</span>
+<span class="nc" id="L526">			} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L527">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+<span class="nc" id="L529">			bean.setPassword(securePassword);</span>
+<span class="nc" id="L530">			try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L531">				ps.setString(1, bean.getEmpID());</span>
+<span class="nc" id="L532">				ps.setString(2, bean.getEmpfName());</span>
+<span class="nc" id="L533">				java.sql.Date doj  = new java.sql.Date(bean.getDOJ().getTime());</span>
+<span class="nc" id="L534">				ps.setDate(3, doj);</span>
+<span class="nc" id="L535">				ps.setString(4, bean.getEmplName());</span>
+<span class="nc" id="L536">				ps.setString(5, bean.getBranch());</span>
+<span class="nc" id="L537">				ps.setString(6, bean.getPemail());</span>
+<span class="nc" id="L538">				java.sql.Date date  = new java.sql.Date(bean.getDOB().getTime());</span>
+<span class="nc" id="L539">				ps.setDate(7,date);</span>
+<span class="nc" id="L540">				ps.setInt(8, 1);</span>
+<span class="nc" id="L541">				int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L542" title="All 4 branches missed.">				if(rs&gt;0 &amp;&amp; dao.createEmp(bean.getEmpID(), bean.getPassword(), bean.getEmpfName(), bean.getEmplName())==true) {</span>
+<span class="nc" id="L543">						return true;</span>
+					}else {
+<span class="nc" id="L545">						return false;</span>
+					}
+<span class="nc" id="L547">			} catch (SQLException e) {</span>
+<span class="nc" id="L548">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}finally {
+				try {
+<span class="nc" id="L551">					DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L552">				} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L553">					LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+				}
+			}
+<span class="nc" id="L556">			return false;</span>
+	} 
+	
+	public boolean empcompletedetails(EmpBean bean) {
+<span class="nc" id="L560">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L561">		String sql = &quot;update emp_details set priaddr = ?, secaddr = ?, father = ?, mother = ?, spouse = ?, addhaar = ?, pancard = ?, passport = ?, primob = ?, secmob = ?, gender = ?, branch = ?,  semail = ? , status=?  where empid=?&quot;;</span>
+<span class="nc" id="L562">		try (PreparedStatement ps= DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L563">			ps.setString(1, bean.getPriAddr());</span>
+<span class="nc" id="L564">			ps.setString(2, bean.getSecAddr());</span>
+<span class="nc" id="L565">			ps.setString(3, bean.getFather());</span>
+<span class="nc" id="L566">			ps.setString(4, bean.getMother());</span>
+<span class="nc" id="L567">			ps.setString(5, bean.getSpouse());</span>
+<span class="nc" id="L568">			ps.setString(6, bean.getAadhar());</span>
+<span class="nc" id="L569">			ps.setString(7, bean.getPanCard());</span>
+<span class="nc" id="L570">			ps.setString(8, bean.getPassport());</span>
+<span class="nc" id="L571">			ps.setString(9, bean.getPriMob());</span>
+<span class="nc" id="L572">			ps.setString(10, bean.getSecMob());</span>
+<span class="nc" id="L573">			ps.setString(11, bean.getGender());</span>
+<span class="nc" id="L574">			ps.setString(12, bean.getBranch());</span>
+<span class="nc" id="L575">			ps.setString(13, bean.getSemail());</span>
+<span class="nc" id="L576">			ps.setInt(14, 2);</span>
+<span class="nc" id="L577">			ps.setString(15, bean.getEmpID());</span>
+<span class="nc" id="L578">			int n = ps.executeUpdate();</span>
+<span class="nc bnc" id="L579" title="All 2 branches missed.">			if(n&gt;0) {</span>
+<span class="nc" id="L580">				return true;</span>
+			}
+<span class="nc" id="L582">		} catch (SQLException e) {</span>
+<span class="nc" id="L583">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L584">			return false;</span>
+		}finally {
+			try {
+<span class="nc" id="L587">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L588">			} catch (SQLException e) {</span>
+<span class="nc" id="L589">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L592">		return false;</span>
+	}
+	public static boolean empCompleteDetailsTBL(String pass,String id, int status) {
+<span class="nc" id="L595">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L596">		String secure= new String();</span>
+		try {
+<span class="nc" id="L598">			secure = toHexString(getPasswordSHA(pass));</span>
+<span class="nc" id="L599">		} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L600">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+<span class="nc" id="L602">		String sql=&quot;update emp_tbl set status='&quot;+status+&quot;' , password='&quot;+secure+&quot;' where empid='&quot;+id+&quot;'&quot;;</span>
+<span class="nc" id="L603">		try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L604">			int rs = st.executeUpdate(sql);</span>
+<span class="nc bnc" id="L605" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L606">				return true;</span>
+			}else {
+<span class="nc" id="L608">				return false;</span>
+			}
+<span class="nc" id="L610">		} catch (SQLException e) {</span>
+<span class="nc" id="L611">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L612">			return false;</span>
+		}finally {
+			try {
+<span class="nc" id="L615">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L616">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L617">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+	}
+	public boolean empDataTemporaryDelete(String empid) {
+<span class="nc" id="L622">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L623">		String sql=&quot;update emp_tbl set status=5 where empid=?&quot;;</span>
+<span class="nc" id="L624">		boolean ret = false;</span>
+<span class="nc" id="L625">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L626">			ps.setString(1, empid);</span>
+<span class="nc" id="L627">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L628" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L629">				ret = true;</span>
+<span class="nc" id="L630">			}else {</span>
+<span class="nc" id="L631">				ret = false;</span>
+			}
+<span class="nc" id="L633">		} catch (SQLException e) {</span>
+<span class="nc" id="L634">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L635">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L638">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L639">			} catch (SQLException e) {</span>
+<span class="nc" id="L640">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L641">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L644">		return ret;</span>
+	}
+	public boolean empDataPermanentDelete(String empid) {
+<span class="nc" id="L647">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L648">		String sql= &quot;delete from emp_tbl where empid=?&quot;;</span>
+<span class="nc" id="L649">		boolean ret = false;</span>
+<span class="nc" id="L650">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L651">			ps.setString(1, empid);</span>
+<span class="nc" id="L652">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L653" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L654">				ret = true;</span>
+<span class="nc" id="L655">			}else {</span>
+<span class="nc" id="L656">				ret = false;</span>
+			}
+<span class="nc" id="L658">		} catch (SQLException e) {</span>
+<span class="nc" id="L659">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L660">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L663">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L664">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L665">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L666">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L669">		return ret;</span>
+	}
+	
+	public boolean empDataTemporaryDeleteTBL(String empid) {
+<span class="nc" id="L673">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L674">		String sql=&quot;update emp_details set status=5 where empid=?&quot;;</span>
+<span class="nc" id="L675">		boolean ret = false;</span>
+<span class="nc" id="L676">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L677">			ps.setString(1, empid);</span>
+<span class="nc" id="L678">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L679" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L680">				ret = true;</span>
+<span class="nc" id="L681">			}else {</span>
+<span class="nc" id="L682">				ret = false;</span>
+			}
+<span class="nc" id="L684">		} catch (SQLException e) {</span>
+<span class="nc" id="L685">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L686">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L689">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L690">			} catch (SQLException e) {</span>
+<span class="nc" id="L691">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L692">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L695">		return ret;</span>
+	}
+	public boolean empDataPermanentDeleteTBL(String empid) {
+<span class="nc" id="L698">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L699">		String sql= &quot;delete from emp_details where empid=?&quot;;</span>
+<span class="nc" id="L700">		boolean ret = false;</span>
+<span class="nc" id="L701">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L702">			ps.setString(1, empid);</span>
+<span class="nc" id="L703">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L704" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L705">				ret = true;</span>
+<span class="nc" id="L706">			}else {</span>
+<span class="nc" id="L707">				ret = false;</span>
+			}
+<span class="nc" id="L709">		} catch (SQLException e) {</span>
+<span class="nc" id="L710">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L711">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L714">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L715">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L716">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L717">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L720">		return ret;</span>
+	}
+	public boolean EmpApprove(String empid) {
+<span class="nc" id="L723">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L724">		String sql = &quot;update emp_tbl set status=3 where empid=?&quot;;</span>
+<span class="nc" id="L725">		boolean ret = false;</span>
+<span class="nc" id="L726">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L727">			ps.setString(1, empid);</span>
+<span class="nc" id="L728">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L729" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L730">				ret = true;</span>
+<span class="nc" id="L731">			}else {</span>
+<span class="nc" id="L732">				ret = false;</span>
+			}
+<span class="nc" id="L734">		} catch (SQLException e) {</span>
+<span class="nc" id="L735">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L736">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L739">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L740">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L741">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L742">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L745">		return ret;</span>
+	}
+	public boolean EmpApproveTBL(String empid) {
+<span class="nc" id="L748">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L749">		String sql = &quot;update emp_details set status=3 where empid=?&quot;;</span>
+<span class="nc" id="L750">		boolean ret = false;</span>
+<span class="nc" id="L751">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L752">			ps.setString(1, empid);</span>
+<span class="nc" id="L753">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L754" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L755">				ret = true;</span>
+<span class="nc" id="L756">			}else {</span>
+<span class="nc" id="L757">				ret = false;</span>
+			}
+<span class="nc" id="L759">		} catch (SQLException e) {</span>
+<span class="nc" id="L760">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L761">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L764">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L765">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L766">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L767">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L770">		return ret;</span>
+	}
+	public boolean EmpReject(String empid) {
+<span class="nc" id="L773">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L774">		String sql = &quot;update emp_tbl set status=1 where empid=?&quot;;</span>
+<span class="nc" id="L775">		boolean ret = false;</span>
+<span class="nc" id="L776">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L777">			ps.setString(1, empid);</span>
+<span class="nc" id="L778">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L779" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L780">				ret = true;</span>
+<span class="nc" id="L781">			}else {</span>
+<span class="nc" id="L782">				ret = false;</span>
+			}
+<span class="nc" id="L784">		} catch (SQLException e) {</span>
+<span class="nc" id="L785">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L786">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L789">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L790">			} catch (SQLException | NullPointerException e) {</span>
+<span class="nc" id="L791">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L792">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L795">		return ret;</span>
+	}
+	public boolean EmpRejectTBL(String empid) {
+<span class="nc" id="L798">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L799">		String sql = &quot;update emp_details set status=1 where empid=?&quot;;</span>
+<span class="nc" id="L800">		boolean ret = false;</span>
+<span class="nc" id="L801">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L802">			ps.setString(1, empid);</span>
+<span class="nc" id="L803">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L804" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L805">				ret = true;</span>
+<span class="nc" id="L806">			}else {</span>
+<span class="nc" id="L807">				ret = false;</span>
+			}
+<span class="nc" id="L809">		} catch (SQLException e) {</span>
+<span class="nc" id="L810">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L811">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L814">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L815">			} catch (SQLException e) {</span>
+<span class="nc" id="L816">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L817">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L820">		return ret;</span>
+	}
+	public boolean empRestore(String empid) {
+<span class="nc" id="L823">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L824">		String sql = &quot;update emp_details set status=2 where empid=?&quot;;</span>
+<span class="nc" id="L825">		boolean ret = false;</span>
+<span class="nc" id="L826">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L827">			ps.setString(1, empid);</span>
+<span class="nc" id="L828">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L829" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L830">				ret = true;</span>
+<span class="nc" id="L831">			}else {</span>
+<span class="nc" id="L832">				ret = false;</span>
+			}
+<span class="nc" id="L834">		} catch (SQLException e) {</span>
+<span class="nc" id="L835">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L836">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L839">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L840">			} catch (SQLException e) {</span>
+<span class="nc" id="L841">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L842">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L845">		return ret;</span>
+	}
+	public boolean empRestoreTBL(String empid) {
+<span class="nc" id="L848">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L849">		String sql = &quot;update emp_tbl set status=2 where empid=?&quot;;</span>
+<span class="nc" id="L850">		boolean ret = false;</span>
+<span class="nc" id="L851">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L852">			ps.setString(1, empid);</span>
+<span class="nc" id="L853">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L854" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L855">				ret = true;</span>
+<span class="nc" id="L856">			}else {</span>
+<span class="nc" id="L857">				ret = false;</span>
+			}
+<span class="nc" id="L859">		} catch (SQLException e) {</span>
+<span class="nc" id="L860">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L861">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L864">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L865">			} catch (SQLException e) {</span>
+<span class="nc" id="L866">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L867">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L870">		return ret;</span>
+	}
+public boolean AddBranch(String ifsc, String bname, String city, String state, String country) {
+<span class="nc" id="L873">	Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+		
+<span class="nc" id="L875">		String qry=&quot;insert into branch values(?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L876">		boolean ret = false;</span>
+<span class="nc" id="L877">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(qry)){</span>
+<span class="nc" id="L878">			ps.setString(1, ifsc);</span>
+<span class="nc" id="L879">			ps.setString(2, bname);</span>
+<span class="nc" id="L880">			ps.setString(3, city);</span>
+<span class="nc" id="L881">			ps.setString(4, state);</span>
+<span class="nc" id="L882">			ps.setString(5, country);</span>
+<span class="nc" id="L883">			int res= ps.executeUpdate();</span>
+<span class="nc bnc" id="L884" title="All 2 branches missed.">			if(res==1) {</span>
+<span class="nc" id="L885">				ret = true;</span>
+<span class="nc" id="L886">			}else {</span>
+<span class="nc" id="L887">				ret = false;</span>
+			}
+<span class="nc" id="L889">		} catch (SQLException e) {</span>
+<span class="nc" id="L890">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L891">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L894">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L895">			} catch (SQLException e) {</span>
+<span class="nc" id="L896">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L897">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L900">		return ret;</span>
+	}
+public String createIFSC(String branch, String state) {
+<span class="nc" id="L903">	Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L904">	StringBuilder sb=new StringBuilder();</span>
+<span class="nc" id="L905">	sb.append(&quot;gib&quot;);</span>
+<span class="nc" id="L906">	sb.append(branch.substring(0, 2));</span>
+<span class="nc" id="L907">	sb.append(state.substring(0, 2));</span>
+<span class="nc" id="L908">	String sql=&quot;select ifsc_seq.nextval from dual&quot;;</span>
+<span class="nc" id="L909">	String ifsc = new String();</span>
+<span class="nc" id="L910">	try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L911">	try (ResultSet rs=ps.executeQuery()){</span>
+<span class="nc" id="L912">		rs.next();</span>
+<span class="nc" id="L913">		sb.append(rs.getInt(1));</span>
+<span class="nc" id="L914">		ifsc= sb.toString().toUpperCase();</span>
+	} finally {
+<span class="nc" id="L916">		ps.getResultSet().close();</span>
+	}
+<span class="nc" id="L918">	} catch (SQLException e) {</span>
+<span class="nc" id="L919">	LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+	}finally {
+		try {
+<span class="nc" id="L922">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L923">		} catch (SQLException e) {</span>
+<span class="nc" id="L924">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L927">	return ifsc;</span>
+}
+public ArrayList&lt;BranchBean&gt; branchView(){
+<span class="nc" id="L930">	Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L931">String sql = &quot;select * from branch&quot;;</span>
+<span class="nc" id="L932">ArrayList&lt;BranchBean&gt; det = new ArrayList&lt;BranchBean&gt;();</span>
+<span class="nc" id="L933">try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L934">	try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L935" title="All 2 branches missed.">		while(rs.next()) {</span>
+<span class="nc" id="L936">			BranchBean bean=new BranchBean();</span>
+<span class="nc" id="L937">			bean.setIFSC(rs.getString(1));</span>
+<span class="nc" id="L938">			bean.setBname(rs.getString(2));</span>
+<span class="nc" id="L939">			bean.setCity(rs.getString(3));</span>
+<span class="nc" id="L940">			bean.setState(rs.getString(4));</span>
+<span class="nc" id="L941">			bean.setCountry(rs.getString(5));</span>
+<span class="nc" id="L942">			det.add(bean);</span>
+		}
+	} finally {
+<span class="nc" id="L945">		ps.getResultSet().close();</span>
+	}
+<span class="nc" id="L947">} catch (SQLException e) {</span>
+<span class="nc" id="L948">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L949">		return null;</span>
+	}finally {
+		try {
+<span class="nc" id="L952">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L953">		} catch (SQLException e) {</span>
+<span class="nc" id="L954">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L957">return det;</span>
+}
+ public boolean delBranch(String IFSC) {
+<span class="nc" id="L960">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L961">	String sql = &quot;delete from branch where IFSC=?&quot;;</span>
+<span class="nc" id="L962">	boolean status = false;</span>
+<span class="nc" id="L963">	try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L964">		ps.setString(1, IFSC);</span>
+<span class="nc" id="L965">		int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L966" title="All 2 branches missed.">		 if(rs&gt;0) {</span>
+<span class="nc" id="L967">			 status = true;</span>
+<span class="nc" id="L968">		 }else {</span>
+<span class="nc" id="L969">			 status = false;</span>
+		 }
+<span class="nc" id="L971">	} catch (SQLException e) {</span>
+<span class="nc" id="L972">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L973">		status = false;</span>
+	}finally {
+		try {
+<span class="nc" id="L976">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L977">		} catch (SQLException e) {</span>
+<span class="nc" id="L978">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L981">	return status;</span>
+}
+ public ArrayList&lt;String&gt; fetchBranch(String bname,String state) {
+<span class="nc" id="L984">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L985">	String sql = &quot;select bname from branch where state='&quot;+state+&quot;' and bname like'&quot;+bname+&quot;%'&quot;;</span>
+<span class="nc" id="L986">	ArrayList&lt;String&gt; branch = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L987">	try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L988">		try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L989" title="All 2 branches missed.">			while(rs.next()) {</span>
+<span class="nc" id="L990">				branch.add(rs.getString(1));</span>
+			}
+		} finally {
+<span class="nc" id="L993">			st.getResultSet().close();</span>
+		}
+<span class="nc" id="L995">	} catch (SQLException e) {</span>
+<span class="nc" id="L996">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+	}finally {
+		try {
+<span class="nc" id="L999">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1000">		} catch (SQLException e) {</span>
+<span class="nc" id="L1001">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L1004">	return branch;</span>
+}
+ public String fetchBranchFromIfsc(String ifsc) {
+<span class="nc" id="L1007">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1008">		String sql = &quot;select bname from branch where ifsc=?&quot;;</span>
+<span class="nc" id="L1009">		String branch = null;</span>
+<span class="nc" id="L1010">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1011">			ps.setString(1, ifsc);</span>
+<span class="nc" id="L1012">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1013">				rs.next();</span>
+<span class="nc" id="L1014">				branch = rs.getString(1);</span>
+			} finally {
+<span class="nc" id="L1016">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1018">		} catch (SQLException e) {</span>
+<span class="nc" id="L1019">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1022">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1023">			} catch (SQLException e) {</span>
+<span class="nc" id="L1024">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1027">		return branch;</span>
+	}
+ public ArrayList&lt;String&gt; fetchBranch(String bname) {
+<span class="nc" id="L1030">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1031">	String sql = &quot;select bname from branch where bname like'&quot;+bname+&quot;%'&quot;;</span>
+<span class="nc" id="L1032">	ArrayList&lt;String&gt; branch = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L1033">	try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L1034">		try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L1035" title="All 2 branches missed.">			while(rs.next()) {</span>
+<span class="nc" id="L1036">				branch.add(rs.getString(1));</span>
+			}
+		} finally {
+<span class="nc" id="L1039">			st.getResultSet().close();</span>
+		}
+<span class="nc" id="L1041">	} catch (SQLException e) {</span>
+<span class="nc" id="L1042">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+	}finally {
+		try {
+<span class="nc" id="L1045">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1046">		} catch (SQLException e) {</span>
+<span class="nc" id="L1047">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L1050">	return branch;</span>
+}
+ public String fetchIFSC(String branch) {
+<span class="nc" id="L1053">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1054">	String sql = &quot;select ifsc from branch where bname=?&quot;;</span>
+<span class="nc" id="L1055">	String ifsc = null;</span>
+<span class="nc" id="L1056">	try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1057">		ps.setString(1, branch);</span>
+<span class="nc" id="L1058">		try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1059">			rs.next();</span>
+<span class="nc" id="L1060">			ifsc = rs.getString(1);</span>
+		} finally {
+<span class="nc" id="L1062">			ps.getResultSet().close();</span>
+		}
+<span class="nc" id="L1064">	} catch (SQLException e) {</span>
+<span class="nc" id="L1065">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+	}finally {
+		try {
+<span class="nc" id="L1068">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1069">		} catch (SQLException e) {</span>
+<span class="nc" id="L1070">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}
+	}
+<span class="nc" id="L1073">	return ifsc;</span>
+}
+ public ArrayList&lt;String&gt; getCity(String city,String state) {
+<span class="nc" id="L1076">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1077">		ArrayList&lt;String&gt; city_list = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L1078">		try (java.sql.Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L1079">			String sql =&quot;select city from branch where state='&quot;+state+&quot;' and city like '&quot;+city+&quot;%'&quot; ;</span>
+<span class="nc" id="L1080">			try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L1081" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1082">					city_list.add(rs.getString(1));</span>
+				}
+			} finally {
+<span class="nc" id="L1085">				st.getResultSet().close();</span>
+			}
+<span class="nc" id="L1087">		} catch (SQLException e) {</span>
+<span class="nc" id="L1088">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L1091">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1092">			} catch (SQLException e) {</span>
+<span class="nc" id="L1093">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1096">		return city_list;</span>
+	}
+ public ArrayList&lt;String&gt; fetchBranchState(String bname) {
+<span class="nc" id="L1099">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1100">		String sql = &quot;select state from branch where state like'&quot;+bname+&quot;%'&quot;;</span>
+<span class="nc" id="L1101">		ArrayList&lt;String&gt; branch = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L1102">		try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L1103">			try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L1104" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1105">					branch.add(rs.getString(1));</span>
+				}
+			} finally {
+<span class="nc" id="L1108">				st.getResultSet().close();</span>
+			}
+<span class="nc" id="L1110">		} catch (SQLException e) {</span>
+<span class="nc" id="L1111">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1114">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1115">			} catch (SQLException e) {</span>
+<span class="nc" id="L1116">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1119">		return branch;</span>
+	}
+ public boolean checkUserIdAvailability(String uname) {
+<span class="nc" id="L1122">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1123">	String sql = &quot;select * from cust_tbl where uname=?&quot;;</span>
+<span class="nc" id="L1124">	boolean ret = false;</span>
+<span class="nc" id="L1125">	try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1126">		ps.setString(1, uname);</span>
+<span class="nc" id="L1127">		try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1128">			ret=rs.next();</span>
+		} finally {
+<span class="nc" id="L1130">			ps.getResultSet().close();</span>
+		}
+<span class="nc" id="L1132">	} catch (SQLException e) {</span>
+<span class="nc" id="L1133">		LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1134">		ret = false;</span>
+	}finally {
+		try {
+<span class="nc" id="L1137">			DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1138">		} catch (SQLException e) {</span>
+<span class="nc" id="L1139">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1140">			ret = false;</span>
+		}
+	}
+<span class="nc" id="L1143">	return ret;</span>
+}
+ public ArrayList&lt;String&gt; fetchCountry(String country) {
+<span class="nc" id="L1146">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1147">		String sql = &quot;select country from branch where country like'&quot;+country+&quot;%'&quot;;</span>
+<span class="nc" id="L1148">		ArrayList&lt;String&gt; branch = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L1149">		try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L1150">			try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L1151" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1152">					branch.add(rs.getString(1));</span>
+				}
+			} finally {
+<span class="nc" id="L1155">				st.getResultSet().close();</span>
+			}
+<span class="nc" id="L1157">		} catch (SQLException e) {</span>
+<span class="nc" id="L1158">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1161">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1162">			} catch (SQLException e) {</span>
+<span class="nc" id="L1163">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1166">		return branch;</span>
+	}
+ public ArrayList&lt;String&gt; fetchBranchState(String state,String country) {
+<span class="nc" id="L1169">	 Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1170">		String sql = &quot;select state from branch where country='&quot;+country+&quot;' and state like'&quot;+state+&quot;%'&quot;;</span>
+<span class="nc" id="L1171">		ArrayList&lt;String&gt; branch = new ArrayList&lt;String&gt;();</span>
+<span class="nc" id="L1172">		try (Statement st = DBUtil.getDBConnection().createStatement()){</span>
+<span class="nc" id="L1173">			try (ResultSet rs = st.executeQuery(sql)){</span>
+<span class="nc bnc" id="L1174" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1175">					branch.add(rs.getString(1));</span>
+				}
+			} finally {
+<span class="nc" id="L1178">				st.getResultSet().close();</span>
+			}	
+<span class="nc" id="L1180">		} catch (SQLException e) {</span>
+<span class="nc" id="L1181">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1182">			return null;</span>
+		}finally {
+			try {
+<span class="nc" id="L1185">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1186">			} catch (SQLException e) {</span>
+<span class="nc" id="L1187">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1190">		return branch;</span>
+	}
+	public boolean changeCustPassword(String custid, String pass) {
+<span class="nc" id="L1193">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1194">		String sql = &quot;update cust_tbl set password = ? where custid = ?&quot;;</span>
+<span class="nc" id="L1195">		boolean ret = false;</span>
+<span class="nc" id="L1196">		int n=0;</span>
+<span class="nc" id="L1197">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1198">			String securePassword = toHexString(getPasswordSHA(pass));</span>
+<span class="nc" id="L1199">			ps.setString(1, securePassword);</span>
+<span class="nc" id="L1200">			ps.setString(2, custid);</span>
+<span class="nc" id="L1201">			n = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1202" title="All 2 branches missed.">			if(n==1)</span>
+<span class="nc" id="L1203">				ret = true;</span>
+			else
+<span class="nc" id="L1205">				ret = false;</span>
+<span class="nc" id="L1206">		} catch (SQLException | NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L1207">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1208">			ret = false;</span>
+		} finally {
+			try {
+<span class="nc" id="L1211">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1212">			} catch (SQLException e) {</span>
+<span class="nc" id="L1213">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1216">		return ret;</span>
+	}
+	
+	public boolean createCustomer(CustomerBean bean) throws NoSuchAlgorithmException {
+<span class="nc" id="L1220">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1221">		int n=0;</span>
+<span class="nc" id="L1222">		String sql = &quot;insert into cust_tbl values (?,?,?)&quot;;</span>
+<span class="nc" id="L1223">		boolean ret = false;</span>
+<span class="nc" id="L1224">		String securePassword = toHexString(getPasswordSHA(bean.getPassword()));</span>
+<span class="nc" id="L1225">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1226">			ps.setString(1, bean.getCustID());</span>
+<span class="nc" id="L1227">			ps.setString(2, securePassword);</span>
+<span class="nc" id="L1228">			ps.setInt(3, 1);</span>
+<span class="nc" id="L1229">			n = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1230" title="All 2 branches missed.">			if(n&gt;0) {</span>
+<span class="nc" id="L1231">				ret = true;</span>
+<span class="nc" id="L1232">			}else {</span>
+<span class="nc" id="L1233">				ret = false;</span>
+			}
+<span class="nc" id="L1235">		} catch (SQLException e) {</span>
+<span class="nc" id="L1236">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1237">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L1240">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1241">			} catch (SQLException e) {</span>
+<span class="nc" id="L1242">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1243">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L1246">		return ret;</span>
+	}
+	public boolean createCustomerDetails(CustomerBean bean) {
+<span class="nc" id="L1249">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1250">		int n=0;</span>
+<span class="nc" id="L1251">		String sql = &quot;insert into cust_details (CUSTFNAME,CUSTLNAME,PEMAIL,CUSTID,DOB,status) values (?,?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L1252">		boolean ret = false;</span>
+<span class="nc" id="L1253">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1254">			ps.setString(1, bean.getCustfName());</span>
+<span class="nc" id="L1255">			ps.setString(2, bean.getCustlName());</span>
+<span class="nc" id="L1256">			ps.setString(3, bean.getPemail());</span>
+<span class="nc" id="L1257">			ps.setString(4, bean.getCustID());</span>
+<span class="nc" id="L1258">			java.sql.Date dob = null;</span>
+<span class="nc bnc" id="L1259" title="All 2 branches missed.">			if(bean.getDOB()!=null) {</span>
+<span class="nc" id="L1260">				dob  = new java.sql.Date(bean.getDOB().getTime());</span>
+			}
+<span class="nc" id="L1262">			ps.setDate(5, dob);</span>
+<span class="nc" id="L1263">			ps.setInt(6, 1);</span>
+<span class="nc" id="L1264">			n = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1265" title="All 2 branches missed.">			if (n&gt;0) {</span>
+<span class="nc" id="L1266">				ret = true;</span>
+<span class="nc" id="L1267">			}else {</span>
+<span class="nc" id="L1268">				ret = false;</span>
+			}
+<span class="nc" id="L1270">		} catch (SQLException e) {</span>
+<span class="nc" id="L1271">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1272">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L1275">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1276">			} catch (SQLException e) {</span>
+<span class="nc" id="L1277">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1278">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L1281">		return ret;</span>
+	}
+	public int custStatus(CustomerBean bean) {
+<span class="nc" id="L1284">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1285">		String sql = &quot;Select status from cust_tbl where uname=?&quot;;</span>
+<span class="nc" id="L1286">		int status = 0;</span>
+<span class="nc" id="L1287">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1288">			ps.setString(1, bean.getCustID());</span>
+<span class="nc" id="L1289">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1290">				rs.next();</span>
+<span class="nc" id="L1291">				status = rs.getInt(1);</span>
+			} finally {
+<span class="nc" id="L1293">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1295">		} catch (SQLException e) {</span>
+<span class="nc" id="L1296">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1297">			status = 0;</span>
+		}finally {
+			try {
+<span class="nc" id="L1300">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1301">			} catch (SQLException e) {</span>
+<span class="nc" id="L1302">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1303">				status = 0;</span>
+			}
+		}
+<span class="nc" id="L1306">		return status;</span>
+	}
+	public boolean validateCustomer(CustomerBean bean) {
+<span class="nc" id="L1309">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1310">		String sql = &quot;select * from cust_tbl where uname=? and password=?&quot;;</span>
+<span class="nc" id="L1311">		String secure= new String();</span>
+<span class="nc" id="L1312">		boolean ret = false;</span>
+		try {
+<span class="nc" id="L1314">			secure = toHexString(getPasswordSHA(bean.getPassword()));</span>
+<span class="nc" id="L1315">		} catch (NoSuchAlgorithmException e) {</span>
+<span class="nc" id="L1316">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1317">			ret = false;</span>
+		}
+<span class="nc" id="L1319">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1320">			ps.setString(1, bean.getCustID());</span>
+<span class="nc" id="L1321">			ps.setString(2, secure);</span>
+<span class="nc" id="L1322">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1323">				ret = rs.next();</span>
+<span class="nc" id="L1324">				System.out.println(ret);</span>
+			} finally {
+<span class="nc" id="L1326">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1328">		} catch (SQLException e) {</span>
+<span class="nc" id="L1329">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1330">			ret = false;</span>
+		}
+<span class="nc" id="L1332">		return ret;</span>
+	}
+	public boolean setStatusInTBL(String uname) {
+<span class="nc" id="L1335">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1336">		String sql = &quot;update cust_tbl set status=2 where uname=?&quot;;</span>
+<span class="nc" id="L1337">		boolean ret = false;</span>
+<span class="nc" id="L1338">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1339">			ps.setString(1, uname);</span>
+<span class="nc" id="L1340">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1341" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1342">				ret = true;</span>
+			}
+<span class="nc" id="L1344">		} catch (SQLException e) {</span>
+<span class="nc" id="L1345">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1346">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L1349">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1350">			} catch (SQLException e) {</span>
+<span class="nc" id="L1351">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1352">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L1355">		return ret;</span>
+	}
+	public boolean setCustDetails(CustomerBean bean) {
+<span class="nc" id="L1358">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1359">		String sql = &quot;update cust_details set CUSTFNAME=? , CUSTMNAME=?, CUSTLNAME=?, FATHER=?,MOTHER=?, SPOUSE=?,ADDHAAR=?,PANCARD=?,PASSPORT=?,SECMOB=?,PRIMOB=?,GENDER=?,BLOODGROUP=?,TERMSANDCONDITION=?,STATUS=?,SEMAIL=?,MAILINGADDR=?,PREADDR=?,branch=? where custid=?&quot;;</span>
+<span class="nc" id="L1360">		boolean ret = false;</span>
+<span class="nc" id="L1361">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1362">			ps.setString(1, bean.getCustfName());</span>
+<span class="nc" id="L1363">			ps.setString(2, bean.getCustmName());</span>
+<span class="nc" id="L1364">			ps.setString(3, bean.getCustlName());</span>
+<span class="nc" id="L1365">			ps.setString(4, bean.getFather());</span>
+<span class="nc" id="L1366">			ps.setString(5, bean.getMother());</span>
+<span class="nc" id="L1367">			ps.setString(6, bean.getSpouse());</span>
+<span class="nc" id="L1368">			ps.setString(7, bean.getAddhaar());</span>
+<span class="nc" id="L1369">			ps.setString(8, bean.getPanCard());</span>
+<span class="nc" id="L1370">			ps.setString(9, bean.getPassport());</span>
+<span class="nc" id="L1371">			ps.setString(10, bean.getSecMob());</span>
+<span class="nc" id="L1372">			ps.setString(11, bean.getPriMob());</span>
+<span class="nc" id="L1373">			ps.setString(12, bean.getGender());</span>
+<span class="nc" id="L1374">			ps.setString(13, bean.getBloodGroup());</span>
+<span class="nc" id="L1375">			ps.setString(14, bean.getTermsAndCondition());</span>
+<span class="nc" id="L1376">			ps.setInt(15, 2);</span>
+<span class="nc" id="L1377">			ps.setString(16, bean.getSemail());</span>
+<span class="nc" id="L1378">			ps.setString(17, bean.getPriAddr());</span>
+<span class="nc" id="L1379">			ps.setString(18, bean.getSecAddr());</span>
+<span class="nc" id="L1380">			ps.setString(19, bean.getBranch());</span>
+<span class="nc" id="L1381">			ps.setString(20, bean.getCustID());</span>
+<span class="nc" id="L1382">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1383" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1384">				ret = true;</span>
+<span class="nc" id="L1385">			}else {</span>
+<span class="nc" id="L1386">				ret = false;</span>
+			}
+<span class="nc" id="L1388">		} catch (SQLException e) {</span>
+<span class="nc" id="L1389">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1390">			ret = false;</span>
+		}finally {
+			try {
+<span class="nc" id="L1393">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1394">			} catch (SQLException e) {</span>
+<span class="nc" id="L1395">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+<span class="nc" id="L1396">				ret = false;</span>
+			}
+		}
+<span class="nc" id="L1399">		return ret;</span>
+	}
+	
+	public CustomerBean getCustDetails(String custId) {
+<span class="nc" id="L1403">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1404">		String sql = &quot;select * from cust_details where CUSTID=?&quot;;</span>
+<span class="nc" id="L1405">		CustomerBean bean = new CustomerBean();</span>
+<span class="nc" id="L1406">			try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1407">				ps.setString(1, custId);</span>
+<span class="nc" id="L1408">				try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L1409" title="All 2 branches missed.">					if(rs.next()) {</span>
+<span class="nc" id="L1410">						bean.setCustID(custId);</span>
+<span class="nc" id="L1411">						bean.setCustfName(rs.getString(1));</span>
+<span class="nc" id="L1412">						bean.setCustmName(rs.getString(2));</span>
+<span class="nc" id="L1413">						bean.setCustlName(rs.getString(3));</span>
+<span class="nc" id="L1414">						bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L1415">						bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L1416">						bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L1417">						bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L1418">						bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L1419">						bean.setAddhaar(rs.getString(10));</span>
+<span class="nc" id="L1420">						bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L1421">						bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L1422">						bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L1423">						bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L1424">						bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L1425">						bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L1426">						bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L1427">						bean.setTermsAndCondition(rs.getString(18));</span>
+<span class="nc" id="L1428">						bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L1429">						bean.setPemail(rs.getString(&quot;pemail&quot;));</span>
+<span class="nc" id="L1430">						bean.setSemail(rs.getString(&quot;semail&quot;));</span>
+<span class="nc" id="L1431">						bean.setEmployment(rs.getString(22));</span>
+<span class="nc" id="L1432">						bean.setDOB(rs.getDate(&quot;dob&quot;));</span>
+<span class="nc" id="L1433">						bean.setBranch(rs.getString(&quot;branch&quot;));</span>
+					}
+				} finally {
+<span class="nc" id="L1436">					ps.getResultSet().close();</span>
+				}
+<span class="nc" id="L1438">			} catch (SQLException e) {</span>
+<span class="nc" id="L1439">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}finally {
+				try {
+<span class="nc" id="L1442">					DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1443">				} catch (SQLException e) {</span>
+<span class="nc" id="L1444">					LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+				}
+			}
+<span class="nc" id="L1447">			return bean;</span>
+	}
+	public ArrayList&lt;CustomerBean&gt; getCustDetails(int status) {
+<span class="nc" id="L1450">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1451">		String sql =&quot;select * from cust_details where status=?&quot;;</span>
+<span class="nc" id="L1452">		ArrayList&lt;CustomerBean&gt; data = new ArrayList&lt;CustomerBean&gt;();</span>
+<span class="nc" id="L1453">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1454">			ps.setInt(1, status);</span>
+<span class="nc" id="L1455">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L1456" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1457">					CustomerBean bean = new CustomerBean();</span>
+<span class="nc" id="L1458">					bean.setCustID(rs.getString(4));</span>
+<span class="nc" id="L1459">					bean.setCustfName(rs.getString(1));</span>
+<span class="nc" id="L1460">					bean.setCustmName(rs.getString(2));</span>
+<span class="nc" id="L1461">					bean.setCustlName(rs.getString(3));</span>
+<span class="nc" id="L1462">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L1463">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L1464">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L1465">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L1466">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L1467">					bean.setAddhaar(rs.getString(10));</span>
+<span class="nc" id="L1468">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L1469">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L1470">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L1471">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L1472">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L1473">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L1474">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L1475">					bean.setTermsAndCondition(rs.getString(18));</span>
+<span class="nc" id="L1476">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L1477">					bean.setPemail(rs.getString(&quot;pemail&quot;));</span>
+<span class="nc" id="L1478">					bean.setSemail(rs.getString(&quot;semail&quot;));</span>
+<span class="nc" id="L1479">					bean.setEmployment(rs.getString(22));</span>
+<span class="nc" id="L1480">					bean.setDOB(rs.getDate(&quot;dob&quot;));</span>
+<span class="nc" id="L1481">					bean.setBranch(rs.getString(&quot;branch&quot;));</span>
+<span class="nc" id="L1482">					data.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L1485">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1487">		} catch (SQLException e) {</span>
+<span class="nc" id="L1488">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1491">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1492">			} catch (SQLException e) {</span>
+<span class="nc" id="L1493">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1496">		return data;</span>
+	}
+	
+	public ArrayList&lt;CustomerBean&gt; getCustDetails(String id,int status) {
+<span class="nc" id="L1500">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1501">		String sql =&quot;select * from cust_details where custid=?&quot;;</span>
+<span class="nc" id="L1502">		ArrayList&lt;CustomerBean&gt; data = new ArrayList&lt;CustomerBean&gt;();</span>
+<span class="nc" id="L1503">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1504">			ps.setString(1, id);</span>
+<span class="nc" id="L1505">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L1506" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1507">					CustomerBean bean = new CustomerBean();</span>
+<span class="nc" id="L1508">					bean.setCustID(rs.getString(4));</span>
+<span class="nc" id="L1509">					bean.setCustfName(rs.getString(1));</span>
+<span class="nc" id="L1510">					bean.setCustmName(rs.getString(2));</span>
+<span class="nc" id="L1511">					bean.setCustlName(rs.getString(3));</span>
+<span class="nc" id="L1512">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L1513">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L1514">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L1515">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L1516">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L1517">					bean.setAddhaar(rs.getString(10));</span>
+<span class="nc" id="L1518">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L1519">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L1520">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L1521">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L1522">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L1523">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L1524">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L1525">					bean.setTermsAndCondition(rs.getString(18));</span>
+<span class="nc" id="L1526">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L1527">					bean.setPemail(rs.getString(&quot;pemail&quot;));</span>
+<span class="nc" id="L1528">					bean.setSemail(rs.getString(&quot;semail&quot;));</span>
+<span class="nc" id="L1529">					bean.setEmployment(rs.getString(22));</span>
+<span class="nc" id="L1530">					bean.setDOB(rs.getDate(&quot;dob&quot;));</span>
+<span class="nc" id="L1531">					bean.setBranch(rs.getString(&quot;branch&quot;));</span>
+<span class="nc" id="L1532">					data.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L1535">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1537">		} catch (SQLException e) {</span>
+<span class="nc" id="L1538">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1541">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1542">			} catch (SQLException e) {</span>
+<span class="nc" id="L1543">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1546">		return data;</span>
+	}
+	public ArrayList&lt;CustomerBean&gt; getCustDetails() {
+<span class="nc" id="L1549">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1550">		String sql =&quot;select * from cust_details where status&lt;5&quot;;</span>
+<span class="nc" id="L1551">		ArrayList&lt;CustomerBean&gt; data = new ArrayList&lt;CustomerBean&gt;();</span>
+<span class="nc" id="L1552">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1553">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L1554" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L1555">					CustomerBean bean = new CustomerBean();</span>
+<span class="nc" id="L1556">					bean.setCustID(rs.getString(4));</span>
+<span class="nc" id="L1557">					bean.setCustfName(rs.getString(1));</span>
+<span class="nc" id="L1558">					bean.setCustmName(rs.getString(2));</span>
+<span class="nc" id="L1559">					bean.setCustlName(rs.getString(3));</span>
+<span class="nc" id="L1560">					bean.setPriAddr(rs.getString(5));</span>
+<span class="nc" id="L1561">					bean.setSecAddr(rs.getString(6));</span>
+<span class="nc" id="L1562">					bean.setFather(rs.getString(7));</span>
+<span class="nc" id="L1563">					bean.setMother(rs.getString(8));</span>
+<span class="nc" id="L1564">					bean.setSpouse(rs.getString(9));</span>
+<span class="nc" id="L1565">					bean.setAddhaar(rs.getString(10));</span>
+<span class="nc" id="L1566">					bean.setPanCard(rs.getString(11));</span>
+<span class="nc" id="L1567">					bean.setPassport(rs.getString(12));</span>
+<span class="nc" id="L1568">					bean.setDOJ(rs.getDate(13));</span>
+<span class="nc" id="L1569">					bean.setPriMob(rs.getString(15));</span>
+<span class="nc" id="L1570">					bean.setSecMob(rs.getString(14));</span>
+<span class="nc" id="L1571">					bean.setGender(rs.getString(16));</span>
+<span class="nc" id="L1572">					bean.setBloodGroup(rs.getString(17));</span>
+<span class="nc" id="L1573">					bean.setTermsAndCondition(rs.getString(18));</span>
+<span class="nc" id="L1574">					bean.setStatus(rs.getInt(19));</span>
+<span class="nc" id="L1575">					bean.setPemail(rs.getString(&quot;pemail&quot;));</span>
+<span class="nc" id="L1576">					bean.setSemail(rs.getString(&quot;semail&quot;));</span>
+<span class="nc" id="L1577">					bean.setEmployment(rs.getString(22));</span>
+<span class="nc" id="L1578">					bean.setDOB(rs.getDate(&quot;dob&quot;));</span>
+<span class="nc" id="L1579">					bean.setBranch(rs.getString(&quot;branch&quot;));</span>
+<span class="nc" id="L1580">					data.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L1583">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1585">		} catch (SQLException e) {</span>
+<span class="nc" id="L1586">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1589">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1590">			} catch (SQLException e) {</span>
+<span class="nc" id="L1591">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1594">		return data;</span>
+	}
+	public int AccStatus(String custid) {
+<span class="nc" id="L1597">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1598">		String sql = &quot;select status from cust_details where custid=?&quot;;</span>
+<span class="nc" id="L1599">		int ret =0;</span>
+<span class="nc" id="L1600">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1601">			ps.setString(1, custid);</span>
+<span class="nc" id="L1602">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1603">				rs.next();</span>
+<span class="nc" id="L1604">				ret = rs.getInt(1);</span>
+			} finally {
+<span class="nc" id="L1606">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1608">		} catch (SQLException e) {</span>
+<span class="nc" id="L1609">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1612">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1613">			} catch (SQLException e) {</span>
+<span class="nc" id="L1614">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1617">		return ret;</span>
+	}
+	public boolean permDelCust(String id) {
+<span class="nc" id="L1620">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1621">		String sql = &quot;delete from cust_details where custid=?&quot;;</span>
+<span class="nc" id="L1622">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1623">			ps.setString(1, id);</span>
+<span class="nc" id="L1624">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1625" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1626">				return true;</span>
+			}
+<span class="nc" id="L1628">		} catch (SQLException e) {</span>
+<span class="nc" id="L1629">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1632">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1633">			} catch (SQLException e) {</span>
+<span class="nc" id="L1634">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1637">		return false;</span>
+	}
+	public boolean permDelCustTbl(String id) {
+<span class="nc" id="L1640">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1641">		String sql = &quot;delete from cust_tbl where uname=?&quot;;</span>
+<span class="nc" id="L1642">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1643">			ps.setString(1, id);</span>
+<span class="nc" id="L1644">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1645" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1646">				return true;</span>
+			}
+<span class="nc" id="L1648">		} catch (SQLException e) {</span>
+<span class="nc" id="L1649">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1652">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1653">			} catch (SQLException e) {</span>
+<span class="nc" id="L1654">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1657">		return false;</span>
+	}
+	public boolean TempDelCust(String id) {
+<span class="nc" id="L1660">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1661">		String sql = &quot;update cust_details set status=5 where custid=?&quot;;</span>
+<span class="nc" id="L1662">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1663">			ps.setString(1, id);</span>
+<span class="nc" id="L1664">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1665" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1666">				return true;</span>
+			}
+<span class="nc" id="L1668">		} catch (SQLException e) {</span>
+<span class="nc" id="L1669">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1672">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1673">			} catch (SQLException e) {</span>
+<span class="nc" id="L1674">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1677">		return false;</span>
+	}
+	public boolean TempDelCustTbl(String id) {
+<span class="nc" id="L1680">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1681">		String sql = &quot;update cust_tbl set status=5 where uname=?&quot;;</span>
+<span class="nc" id="L1682">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1683">			ps.setString(1, id);</span>
+<span class="nc" id="L1684">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1685" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1686">				return true;</span>
+			}
+<span class="nc" id="L1688">		} catch (SQLException e) {</span>
+<span class="nc" id="L1689">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1692">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1693">			} catch (SQLException e) {</span>
+<span class="nc" id="L1694">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1697">		return false;</span>
+	}
+	public boolean restoreCust(String id) {
+<span class="nc" id="L1700">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L1701">		String sql = &quot;update cust_details set status=2 where custid=?&quot;;</span>
+<span class="nc" id="L1702">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+			
+<span class="nc" id="L1704">			ps.setString(1, id);</span>
+<span class="nc" id="L1705">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1706" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1707">				return true;</span>
+			}
+<span class="nc" id="L1709">		} catch (SQLException e) {</span>
+<span class="nc" id="L1710">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1713">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1714">			} catch (SQLException e) {</span>
+<span class="nc" id="L1715">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1718">		return false;</span>
+	}
+	public boolean restoreCustTbl(String id) {
+<span class="nc" id="L1721">		String sql = &quot;update cust_tbl set status=2 where uname=?&quot;;</span>
+<span class="nc" id="L1722">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1723">			ps.setString(1, id);</span>
+<span class="nc" id="L1724">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1725" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1726">				return true;</span>
+			}
+<span class="nc" id="L1728">		} catch (SQLException e) {</span>
+<span class="nc" id="L1729">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1732">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1733">			} catch (SQLException e) {</span>
+<span class="nc" id="L1734">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1737">		return false;</span>
+	}
+	public boolean approveCust(String id) {
+<span class="nc" id="L1740">		String sql = &quot;update cust_details set status=3 where custid=?&quot;;</span>
+<span class="nc" id="L1741">			try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1742">			ps.setString(1, id);</span>
+<span class="nc" id="L1743">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1744" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1745">				return true;</span>
+			}
+<span class="nc" id="L1747">		} catch (SQLException e) {</span>
+<span class="nc" id="L1748">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1751">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1752">			} catch (SQLException e) {</span>
+<span class="nc" id="L1753">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1756">		return false;</span>
+	}
+	public boolean approveCustTbl(String id) {
+<span class="nc" id="L1759">		String sql = &quot;update cust_tbl set status=3 where uname=?&quot;;</span>
+<span class="nc" id="L1760">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1761">			ps.setString(1, id);</span>
+<span class="nc" id="L1762">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1763" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1764">				return true;</span>
+			}
+<span class="nc" id="L1766">		} catch (SQLException e) {</span>
+<span class="nc" id="L1767">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1770">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1771">			} catch (Exception e2) {</span>
+<span class="nc" id="L1772">				LOGGER.log(Level.WARNING,&quot;error&quot;,e2);</span>
+			}
+		}
+<span class="nc" id="L1775">		return false;</span>
+	}
+	public boolean rejectCust(String id) {
+<span class="nc" id="L1778">		String sql = &quot;update cust_details set status=1 where custid=?&quot;;</span>
+<span class="nc" id="L1779">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1780">			ps.setString(1, id);</span>
+<span class="nc" id="L1781">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1782" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1783">				return true;</span>
+			}
+<span class="nc" id="L1785">		} catch (SQLException e) {</span>
+<span class="nc" id="L1786">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1789">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1790">			} catch (SQLException e) {</span>
+<span class="nc" id="L1791">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1794">		return false;</span>
+	}
+	public boolean rejectCustTbl(String id) {
+<span class="nc" id="L1797">		String sql = &quot;update cust_tbl set status=1 where uname=?&quot;;</span>
+<span class="nc" id="L1798">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1799">			ps.setString(1, id);</span>
+<span class="nc" id="L1800">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1801" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1802">				return true;</span>
+			}
+<span class="nc" id="L1804">		} catch (SQLException e) {</span>
+<span class="nc" id="L1805">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1808">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1809">			} catch (SQLException e) {</span>
+<span class="nc" id="L1810">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1813">		return false;</span>
+	}
+	
+	public boolean generateDebitCard(CardBean data) {
+<span class="fc" id="L1817">		String sql = &quot;insert into debitcard values(?,?,?,?)&quot;;</span>
+<span class="fc" id="L1818">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L1819">			ps.setString(1, data.getCardNo());</span>
+<span class="fc" id="L1820">			ps.setString(2, data.getExp());</span>
+<span class="fc" id="L1821">			ps.setString(3, data.getCvv());</span>
+<span class="fc" id="L1822">			ps.setString(4, data.getAcc_no());</span>
+<span class="fc" id="L1823">			int rs = ps.executeUpdate();</span>
+<span class="pc bpc" id="L1824" title="1 of 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="fc" id="L1825">				return true;</span>
+			}
+<span class="nc" id="L1827">		} catch (SQLException e) {</span>
+<span class="nc" id="L1828">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L1831">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L1832">			} catch (SQLException e) {</span>
+<span class="nc" id="L1833">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1836">		return false;</span>
+	}
+	public CardBean cardDetails(String AccNo) {
+<span class="nc" id="L1839">		String sql = &quot;Select * from debitcard where Acc_No=?&quot;;</span>
+<span class="nc" id="L1840">		CardBean card = new CardBean();</span>
+<span class="nc" id="L1841">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1842">			ps.setString(1, AccNo);</span>
+<span class="nc" id="L1843">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1844">				rs.next();</span>
+<span class="nc" id="L1845">				card.setAcc_no(AccNo);</span>
+<span class="nc" id="L1846">				card.setCardNo(rs.getString(1));</span>
+<span class="nc" id="L1847">				card.setExp(rs.getString(2));</span>
+<span class="nc" id="L1848">				card.setCvv(rs.getString(3));</span>
+			} finally {
+<span class="nc" id="L1850">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1852">		} catch (SQLException e) {</span>
+<span class="nc" id="L1853">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1856">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1857">			} catch (SQLException e) {</span>
+<span class="nc" id="L1858">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1861">		return card;</span>
+	}
+	public boolean createNewAccount(AccDetails data) {
+<span class="fc" id="L1864">		String sql = &quot;insert into Acc_Details values (?,?,?,?,?,?)&quot;;</span>
+<span class="fc" id="L1865">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L1866">			ps.setString(1, data.getAcc_No());</span>
+<span class="fc" id="L1867">			ps.setString(2, data.getBalance());</span>
+<span class="fc" id="L1868">			ps.setString(3, data.getOpeningDate());</span>
+<span class="fc" id="L1869">			ps.setString(4, data.getCustid());</span>
+<span class="fc" id="L1870">			ps.setString(5, data.getCardNo());</span>
+<span class="fc" id="L1871">			ps.setString(6, data.getIFSC());</span>
+<span class="fc" id="L1872">			int rs = ps.executeUpdate();</span>
+<span class="pc bpc" id="L1873" title="1 of 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="fc" id="L1874">				return true;</span>
+			}
+<span class="nc" id="L1876">		} catch (SQLException e) {</span>
+<span class="nc" id="L1877">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L1880">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L1881">			} catch (SQLException e) {</span>
+<span class="nc" id="L1882">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1885">		return false;</span>
+	}
+	public boolean updateBalance(String acc_no,String bal) {
+<span class="nc" id="L1888">		String sql = &quot;update acc_details set balance=? where acc_no=?&quot;;</span>
+<span class="nc" id="L1889">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1890">			ps.setString(1, bal);</span>
+<span class="nc" id="L1891">			ps.setString(2, acc_no);</span>
+<span class="nc" id="L1892">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L1893" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L1894">				return true;</span>
+			}
+<span class="nc" id="L1896">		} catch (SQLException e) {</span>
+<span class="nc" id="L1897">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1900">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1901">			} catch (SQLException e) {</span>
+<span class="nc" id="L1902">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1905">		return false;</span>
+	}
+	public AccDetails accdetails(String custid) {
+<span class="nc" id="L1908">		String sql = &quot;select * from acc_details where custid=?&quot;;</span>
+<span class="nc" id="L1909">		AccDetails det = new AccDetails();</span>
+<span class="nc" id="L1910">			try(PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)) {</span>
+<span class="nc" id="L1911">			ps.setString(1, custid);</span>
+<span class="nc" id="L1912">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1913">				rs.next();</span>
+<span class="nc" id="L1914">				det.setAcc_No(rs.getString(1));</span>
+<span class="nc" id="L1915">				det.setBalance(rs.getString(2));</span>
+<span class="nc" id="L1916">				det.setOpeningDate(rs.getString(3));</span>
+<span class="nc" id="L1917">				det.setCustid(rs.getString(4));</span>
+<span class="nc" id="L1918">				det.setCardNo(rs.getString(5));</span>
+<span class="nc" id="L1919">				det.setIFSC(rs.getString(6));</span>
+			} finally {
+<span class="nc" id="L1921">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1923">		} catch (SQLException e) {</span>
+<span class="nc" id="L1924">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1927">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1928">			} catch (SQLException e) {</span>
+<span class="nc" id="L1929">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1932">			return det;</span>
+	}
+	public String balance(String accno) {
+<span class="nc" id="L1935">		String sql = &quot;select balance from acc_details where acc_no=?&quot;;</span>
+<span class="nc" id="L1936">		String bal = &quot;0&quot;;</span>
+<span class="nc" id="L1937">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L1938">			ps.setString(1, accno);</span>
+<span class="nc" id="L1939">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L1940">				rs.next();</span>
+<span class="nc" id="L1941">				bal = rs.getString(1);</span>
+			} finally {
+<span class="nc" id="L1943">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1945">		} catch (SQLException e) {</span>
+<span class="nc" id="L1946">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L1949">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L1950">			} catch (SQLException e) {</span>
+<span class="nc" id="L1951">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L1954">		return bal;</span>
+	}
+	public String generateAccNo() {
+<span class="fc" id="L1957">		String sql = &quot;select ACC_NO.nextval from dual&quot;;</span>
+<span class="fc" id="L1958">		StringBuffer AccNo = new StringBuffer();</span>
+<span class="fc" id="L1959">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L1960">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="fc" id="L1961">				rs.next();</span>
+<span class="fc" id="L1962">				AccNo.append(rs.getInt(1));</span>
+			} finally {
+<span class="fc" id="L1964">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1966">		} catch (SQLException e) {</span>
+<span class="nc" id="L1967">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L1970">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L1971">			} catch (SQLException e) {</span>
+<span class="nc" id="L1972">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="fc" id="L1975">		return AccNo.toString();</span>
+	}
+	public String generateCardNo() {
+<span class="fc" id="L1978">		String sql = &quot;select debitCardID.nextval from dual&quot;;</span>
+<span class="fc" id="L1979">		StringBuffer cardNo = new StringBuffer();</span>
+<span class="fc" id="L1980">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L1981">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="fc" id="L1982">				rs.next();</span>
+<span class="fc" id="L1983">				cardNo.append(rs.getBigDecimal(1));</span>
+<span class="fc" id="L1984">				cardNo.insert(4, &quot; &quot;);</span>
+<span class="fc" id="L1985">				cardNo.insert(9, &quot; &quot;);</span>
+<span class="fc" id="L1986">				cardNo.insert(14, &quot; &quot;);</span>
+			} finally {
+<span class="fc" id="L1988">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L1990">		} catch (SQLException e) {</span>
+<span class="nc" id="L1991">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L1994">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L1995">			} catch (SQLException e) {</span>
+<span class="nc" id="L1996">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="fc" id="L1999">		return cardNo.toString();</span>
+	}
+	public String lastLogin(String custid) {
+<span class="fc" id="L2002">		String lastDate = null;</span>
+<span class="fc" id="L2003">		String sql = &quot;select LOGIN_TIMEDATE from login_log where custid=? order by logid asc&quot;;</span>
+<span class="fc" id="L2004">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L2005">			ps.setString(1, custid);</span>
+<span class="fc" id="L2006">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="fc bfc" id="L2007" title="All 2 branches covered.">				while(rs.next()) {</span>
+<span class="fc" id="L2008">					lastDate = rs.getString(1);</span>
+				}
+			} finally {
+<span class="fc" id="L2011">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2013">		} catch (SQLException e) {</span>
+<span class="nc" id="L2014">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L2017">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L2018">			} catch (SQLException e) {</span>
+<span class="nc" id="L2019">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="fc" id="L2022">		return lastDate;</span>
+	}
+	public boolean login_log(String custid) {
+<span class="fc" id="L2025">		String sql = &quot;insert into login_log values(?,?,?)&quot;;</span>
+<span class="fc" id="L2026">		StringBuffer id = new StringBuffer();</span>
+<span class="fc" id="L2027">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L2028">			id.append(generateLogID());</span>
+<span class="fc" id="L2029">			ps.setString(1, id.toString());</span>
+<span class="fc" id="L2030">			Date date = new Date();</span>
+<span class="fc" id="L2031">			ps.setString(2, date.toString());</span>
+<span class="fc" id="L2032">			ps.setString(3, custid);</span>
+<span class="fc" id="L2033">			int rs = ps.executeUpdate();</span>
+<span class="pc bpc" id="L2034" title="1 of 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="fc" id="L2035">				return true;</span>
+			}
+<span class="nc" id="L2037">		} catch (SQLException e) {</span>
+<span class="nc" id="L2038">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L2041">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L2042">			} catch (SQLException e) {</span>
+<span class="nc" id="L2043">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2046">		return false;</span>
+	}
+	public static int generateLogID() {
+<span class="fc" id="L2049">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="fc" id="L2050">		String sql = &quot;select log_seq.nextval from dual&quot;;</span>
+<span class="fc" id="L2051">		int id=0;</span>
+<span class="fc" id="L2052">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="fc" id="L2053">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="fc" id="L2054">				rs.next();</span>
+<span class="fc" id="L2055">				id = rs.getInt(1);</span>
+			} finally {
+<span class="fc" id="L2057">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2059">		} catch (SQLException e) {</span>
+<span class="nc" id="L2060">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="fc" id="L2063">				DBUtil.getDBConnection().close();</span>
+<span class="pc" id="L2064">			} catch (SQLException e) {</span>
+<span class="nc" id="L2065">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="fc" id="L2068">		return id;</span>
+	}
+	public boolean addbenifieceiry(Benifieceiry bean) {
+<span class="nc" id="L2071">		String sql = &quot;insert into benifieceiry values (?,?,?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L2072">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2073">			ps.setString(1, bean.getName());</span>
+<span class="nc" id="L2074">			ps.setString(2, bean.getAccno());</span>
+<span class="nc" id="L2075">			ps.setString(3, bean.getBank());</span>
+<span class="nc" id="L2076">			ps.setString(4, bean.getIfsc());</span>
+<span class="nc" id="L2077">			ps.setString(5, bean.getBname());</span>
+<span class="nc" id="L2078">			ps.setString(6, bean.getAcctype());</span>
+<span class="nc" id="L2079">			ps.setString(7, bean.getId());</span>
+<span class="nc" id="L2080">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L2081" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L2082">				return true;</span>
+			}
+<span class="nc" id="L2084">		} catch (SQLException e) {</span>
+<span class="nc" id="L2085">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2088">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2089">			} catch (SQLException e) {</span>
+<span class="nc" id="L2090">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2093">		return false;</span>
+	}
+	public ArrayList&lt;Benifieceiry&gt; fetchBenifieceiry(String id) {
+<span class="nc" id="L2096">		String sql = &quot;select * from benifieceiry where custid=?&quot;;</span>
+<span class="nc" id="L2097">		ArrayList&lt;Benifieceiry&gt; data = new ArrayList&lt;Benifieceiry&gt;();</span>
+<span class="nc" id="L2098">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2099">			ps.setString(1, id);</span>
+<span class="nc" id="L2100">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L2101" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L2102">					Benifieceiry dat = new Benifieceiry();</span>
+<span class="nc" id="L2103">					dat.setName(rs.getString(1));</span>
+<span class="nc" id="L2104">					dat.setAccno(rs.getString(2));</span>
+<span class="nc" id="L2105">					dat.setBank(rs.getString(3));</span>
+<span class="nc" id="L2106">					dat.setIfsc(rs.getString(4));</span>
+<span class="nc" id="L2107">					dat.setBname(rs.getString(5));</span>
+<span class="nc" id="L2108">					dat.setAcctype(rs.getString(6));</span>
+<span class="nc" id="L2109">					dat.setId(rs.getString(7));</span>
+<span class="nc" id="L2110">					data.add(dat);</span>
+				}
+			} finally {
+<span class="nc" id="L2113">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2115">		} catch (SQLException e) {</span>
+<span class="nc" id="L2116">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2119">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2120">			} catch (SQLException e) {</span>
+<span class="nc" id="L2121">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2124">		return data;</span>
+	}
+	public boolean validateAccountNo(String accno) {
+<span class="nc" id="L2127">		String sql = &quot;select * from acc_details where acc_no=?&quot;;</span>
+<span class="nc" id="L2128">		boolean val = false;</span>
+<span class="nc" id="L2129">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2130">			ps.setString(1, accno);</span>
+<span class="nc" id="L2131">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L2132">				val = rs.next();</span>
+			} finally {
+<span class="nc" id="L2134">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2136">		} catch (SQLException e) {</span>
+<span class="nc" id="L2137">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2140">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2141">			} catch (SQLException e) {</span>
+<span class="nc" id="L2142">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2145">		return val;</span>
+	}
+	public static String generateTransactionID() {
+<span class="nc" id="L2148">		Logger LOGGER = Logger.getLogger(BankingDao.class.getName());</span>
+<span class="nc" id="L2149">		String sql = &quot;select transid.nextval from dual&quot;;</span>
+<span class="nc" id="L2150">		StringBuffer id = new StringBuffer();</span>
+<span class="nc" id="L2151">		try (PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2152">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc" id="L2153">				rs.next();</span>
+<span class="nc" id="L2154">				id.append(rs.getInt(1));</span>
+			} finally {
+<span class="nc" id="L2156">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2158">		} catch (SQLException e) {</span>
+<span class="nc" id="L2159">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2162">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2163">			} catch (SQLException e) {</span>
+<span class="nc" id="L2164">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2167">		return id.toString();</span>
+	}
+	public boolean transfer(TransactionBean bean,Date dat) {
+<span class="nc" id="L2170">		String sql =&quot;insert into transaction values(?,?,?,?,?)&quot;;</span>
+<span class="nc" id="L2171">		boolean val = false;</span>
+<span class="nc" id="L2172">		try(PreparedStatement ps = DBUtil.getDBConnection().prepareStatement(sql)) {</span>
+<span class="nc" id="L2173">			ps.setString(1, generateTransactionID());</span>
+<span class="nc" id="L2174">			ps.setString(2, bean.getToAccount());</span>
+<span class="nc" id="L2175">			ps.setString(3, bean.getFromAccount());</span>
+<span class="nc" id="L2176">			java.sql.Date  date = new java.sql.Date(dat.getTime());</span>
+<span class="nc" id="L2177">			ps.setDate(4, date);</span>
+<span class="nc" id="L2178">			ps.setString(5, bean.getAmount());</span>
+<span class="nc" id="L2179">			int rs = ps.executeUpdate();</span>
+<span class="nc bnc" id="L2180" title="All 2 branches missed.">			if(rs&gt;0) {</span>
+<span class="nc" id="L2181">				val = true;</span>
+			}
+<span class="nc" id="L2183">		} catch (SQLException e) {</span>
+<span class="nc" id="L2184">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2187">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2188">			} catch (SQLException e) {</span>
+<span class="nc" id="L2189">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2192">		return val;</span>
+	}
+	public ArrayList&lt;TransactionBean&gt; getDebitTransaction(String accno) {
+<span class="nc" id="L2195">		String sql = &quot;select * from transaction where FROMACCOUNT=? order by DATEOFTRANSACTION desc&quot;;</span>
+<span class="nc" id="L2196">		ArrayList&lt;TransactionBean&gt; trans = new ArrayList&lt;TransactionBean&gt;();</span>
+<span class="nc" id="L2197">		try (PreparedStatement ps =DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2198">			ps.setString(1, accno);</span>
+<span class="nc" id="L2199">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L2200" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L2201">					TransactionBean bean = new TransactionBean();</span>
+<span class="nc" id="L2202">					bean.setAmount(rs.getString(5));</span>
+<span class="nc" id="L2203">					bean.setId(rs.getString(1));</span>
+<span class="nc" id="L2204">					bean.setToAccount(rs.getString(2));</span>
+<span class="nc" id="L2205">					bean.setFromAccount(rs.getString(3));</span>
+<span class="nc" id="L2206">					bean.setDateoftrans(rs.getDate(4).toString());</span>
+<span class="nc" id="L2207">					trans.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L2210">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2212">		} catch (SQLException e) {</span>
+<span class="nc" id="L2213">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2216">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2217">			} catch (SQLException e) {</span>
+<span class="nc" id="L2218">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2221">		return trans;</span>
+	}
+	public ArrayList&lt;TransactionBean&gt; getCreditTransaction(String accno) {
+<span class="nc" id="L2224">		String sql = &quot;select * from transaction where TOACCOUNT=? order by DATEOFTRANSACTION desc&quot;;</span>
+<span class="nc" id="L2225">		ArrayList&lt;TransactionBean&gt; trans = new ArrayList&lt;TransactionBean&gt;();</span>
+<span class="nc" id="L2226">		try (PreparedStatement ps =DBUtil.getDBConnection().prepareStatement(sql)){</span>
+<span class="nc" id="L2227">			ps.setString(1, accno);</span>
+<span class="nc" id="L2228">			try (ResultSet rs = ps.executeQuery()){</span>
+<span class="nc bnc" id="L2229" title="All 2 branches missed.">				while(rs.next()) {</span>
+<span class="nc" id="L2230">					TransactionBean bean = new TransactionBean();</span>
+<span class="nc" id="L2231">					bean.setAmount(rs.getString(5));</span>
+<span class="nc" id="L2232">					bean.setId(rs.getString(1));</span>
+<span class="nc" id="L2233">					bean.setToAccount(rs.getString(2));</span>
+<span class="nc" id="L2234">					bean.setFromAccount(rs.getString(3));</span>
+<span class="nc" id="L2235">					bean.setDateoftrans(rs.getDate(4).toString());</span>
+<span class="nc" id="L2236">					trans.add(bean);</span>
+				}
+			} finally {
+<span class="nc" id="L2239">				ps.getResultSet().close();</span>
+			}
+<span class="nc" id="L2241">		} catch (SQLException e) {</span>
+<span class="nc" id="L2242">			LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+		}finally {
+			try {
+<span class="nc" id="L2245">				DBUtil.getDBConnection().close();</span>
+<span class="nc" id="L2246">			} catch (SQLException e) {</span>
+<span class="nc" id="L2247">				LOGGER.log(Level.WARNING,&quot;error&quot;,e);</span>
+			}
+		}
+<span class="nc" id="L2250">		return trans;</span>
+	}
+	public static byte[] getPasswordSHA(String password) throws NoSuchAlgorithmException {
+<span class="fc" id="L2253">		MessageDigest md = MessageDigest.getInstance(&quot;SHA-256&quot;);</span>
+<span class="fc" id="L2254">		return md.digest(password.getBytes(StandardCharsets.UTF_8));</span>
+	}
+	public static String toHexString(byte[] passHash) {
+<span class="fc" id="L2257">		BigInteger pass = new BigInteger(1,passHash);</span>
+<span class="fc" id="L2258">		StringBuilder hexString = new StringBuilder(pass.toString(16));</span>
+<span class="pc bpc" id="L2259" title="1 of 2 branches missed.">		while (hexString.length()&lt;32) {</span>
+<span class="nc" id="L2260">			hexString.insert(0, '0');</span>
+		}
+<span class="fc" id="L2262">		return hexString.toString();</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.3.201901230119</span>test (3) (8 Jan, 2020 12:51:56 AM)</div></body></html>
